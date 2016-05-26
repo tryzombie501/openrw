@@ -8,6 +8,7 @@
 #include <objects/CharacterObject.hpp>
 #include <objects/VehicleObject.hpp>
 #include <objects/ItemPickup.hpp>
+#include <dynamics/CollisionInstance.hpp>
 #include <data/Model.hpp>
 #include <items/WeaponItem.hpp>
 #include <engine/GameWorld.hpp>
@@ -187,7 +188,7 @@ void IngameState::tick(float dt)
 			lookTargetPosition = targetPosition;
 			lookTargetPosition.z += (vehicle->info->handling.dimensions.z);
 			targetPosition.z += (vehicle->info->handling.dimensions.z * 1.f);
-			physTarget = vehicle->physBody;
+			physTarget = vehicle->collision->getBulletBody();
 
 			if (!m_vehicleFreeLook)
 			{
