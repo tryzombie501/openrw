@@ -298,7 +298,7 @@ public:
 	void clearCutscene();
 	bool isCutsceneDone();
 
-	sf::SoundStream* cutsceneAudio;
+	std::string cutsceneAudio;
 	bool cutsceneAudioLoaded;
 	std::string missionAudio;
 	sf::Sound missionSound;
