@@ -29,6 +29,8 @@
 
 glm::vec3 spawnMagic( 0.f, 0.f, 1.f );
 
+constexpr float kVehicleStoppedSpeed = 0.1f;
+
 void game_create_player(const ScriptArguments& args)
 {
 	auto id = args[0].integer;
@@ -611,7 +613,7 @@ bool game_vehicle_stopped(const ScriptArguments& args)
 	
 	if( vehicle )
 	{
-		return std::abs( vehicle->physVehicle->getCurrentSpeedKmHour() ) <= 0.01f;
+		return std::fabs(vehicle->getVelocity()) < kVehicleStoppedSpeed;
 	}
 	return false;
 }
@@ -656,7 +658,7 @@ bool game_character_stoped_in_volume_in_vehicle(const ScriptArguments& args)
 		if( pp.x >= min.x && pp.y >= min.y && pp.z >= min.z &&
 			pp.x <= max.x && pp.y <= max.y && pp.z <= max.z )
 		{
-			return character->getCurrentVehicle()->physVehicle->getCurrentSpeedKmHour() < 0.75f;
+			return std::fabs(character->getCurrentVehicle()->getVelocity()) < kVehicleStoppedSpeed;
 		}
 		
 		// Request the renderer draw a cylinder here.
@@ -688,7 +690,7 @@ bool game_character_stoped_in_volume(const ScriptArguments& args)
 	{
 		if( character->getCurrentVehicle() != nullptr )
 		{
-			return character->getCurrentVehicle()->physVehicle->getCurrentSpeedKmHour() < 0.75f;
+			return std::fabs(character->getCurrentVehicle()->getVelocity()) < kVehicleStoppedSpeed;
 		}
 		else
 		{
@@ -712,7 +714,7 @@ bool game_is_character_stopped(const ScriptArguments& args)
 	
 	if( character && character->getCurrentVehicle() != nullptr )
 	{
-		return character->getCurrentVehicle()->physVehicle->getCurrentSpeedKmHour() < 0.75f;
+		return std::fabs(character->getCurrentVehicle()->getVelocity()) < kVehicleStoppedSpeed;
 	}
 	
 	return true;
@@ -784,7 +786,7 @@ void game_get_speed(const ScriptArguments& args)
 	auto vehicle = static_cast<VehicleObject*>(args.getObject<VehicleObject>(0));
 	if( vehicle )
 	{
-		*args[1].globalReal = vehicle->physVehicle->getCurrentSpeedKmHour();
+		*args[1].globalReal = vehicle->getVelocity()*60.f*60.f*(1.f/1000.f);
 	}
 }
 
