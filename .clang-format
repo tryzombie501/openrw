@@ -1,1 +1,8 @@
-DisableFormat: true
+BasedOnStyle: Google
+IndentWidth: 4
+TabWidth: 4
+UseTab: ForIndentation
+BreakBeforeBraces: Linux
+AllowShortIfStatementsOnASingleLine: false
+BreakConstructorInitializersBeforeComma: true
+IndentCaseLabels: false
