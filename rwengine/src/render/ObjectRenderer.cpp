@@ -63,8 +63,7 @@ void ObjectRenderer::renderGeometry(Model* model,
 				if( ! tex )
 				{
 					auto& tC = mat.textures[0].name;
-					auto& tA = mat.textures[0].alphaName;
-					tex = m_world->data->findTexture(tC, tA);
+					tex = m_world->data->findTexture(tC);
 					if( ! tex )
 					{
 						//logger->warning("Renderer", "Missing texture: " + tC + " " + tA);

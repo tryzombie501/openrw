@@ -20,6 +20,8 @@ SET(RWLIB_SOURCES
 
 	"source/data/Texture.hpp"
 	"source/data/Texture.cpp"
+	"source/data/TextureDictionary.hpp"
+	"source/data/TextureDictionary.cpp"
 	"source/data/ResourceHandle.hpp"
 	"source/data/Model.hpp"
 	"source/data/Model.cpp"

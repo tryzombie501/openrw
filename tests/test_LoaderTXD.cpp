@@ -15,12 +15,12 @@ BOOST_AUTO_TEST_CASE(texture_load_tests)
 	auto file = Global::get().d->openFile("landstal.txd");
 	BOOST_REQUIRE(file != nullptr);
 
-	TextureDictionary dictionary;
-	BOOST_REQUIRE(txdLoader.loadFromMemory(file, dictionary));
+	auto dictionary = txdLoader.loadFromMemory(file);
+	BOOST_REQUIRE(dictionary);
 
-	BOOST_CHECK(dictionary.size() > 0);
+	BOOST_CHECK(dictionary->getTextures().size() > 0);
 
-	for (auto& p : dictionary)
+	for (auto& p : dictionary->getTextures())
 	{
 		// All Textures should have data waiting to be commited
 		BOOST_CHECK(p.second->needsCommit());

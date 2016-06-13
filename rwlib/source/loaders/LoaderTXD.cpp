@@ -21,13 +21,16 @@ void processPalette(uint32_t* fullColor, RW::BinaryStreamSection& rootSection)
 
 }
 
-bool rw::LoaderTXD::loadFromMemory(FileHandle file, TextureDictionary& archive)
+rw::TextureDictionary* rw::LoaderTXD::loadFromMemory(FileHandle file)
 {
 	if (file->data)
 	{
 		RW::BinaryStreamSection root(file->data);
 		auto& textDict = root.readStructure<RW::BSTextureDictionary>();
 		RW_UNUSED(textDict);
+
+		/// @todo allocate elsewhere
+		auto dict = new rw::TextureDictionary;
 
 		size_t rootI = 0;
 		while (root.hasMoreData(rootI)) {
@@ -39,16 +42,15 @@ bool rw::LoaderTXD::loadFromMemory(FileHandle file, TextureDictionary& archive)
 			RW::BSTextureNative texNative = rootSection.readStructure<RW::BSTextureNative>();
 			auto texture = createTexture(texNative, rootSection);
 			RW_CHECK(texture != nullptr, "Failed to load a texture");
-			if (texture == nullptr) {
-				return false;
+			if (texture) {
+				dict->addTexture(texture);
 			}
-
-			archive[texture->getName()] = texture;
 		}
-		return true;
+
+		return dict;
 	}
 
-	return false;
+	return nullptr;
 }
 
 rw::Texture* rw::LoaderTXD::createTexture(RW::BSTextureNative& texNative, RW::BinaryStreamSection& rootSection)
@@ -117,28 +119,34 @@ rw::Texture* rw::LoaderTXD::createTexture(RW::BSTextureNative& texNative, RW::Bi
 // TODO Move the Job system out of the loading code
 #include <platform/FileIndex.hpp>
 
-LoadTextureArchiveJob::LoadTextureArchiveJob(WorkContext *context, FileIndex* index, TextureDictionary& inTextures, const std::string &file)
+LoadTextureArchiveJob::LoadTextureArchiveJob(WorkContext *context,
+											 FileIndex* index,
+											 const std::string &file,
+											 LoadedCallback done)
 	: WorkJob(context)
-	, archive(inTextures)
+	, loaded(nullptr)
 	, fileIndex(index)
-	, _file(file)
+	, file(file)
+	, completed(done)
 {
 
 }
 
 void LoadTextureArchiveJob::work()
 {
-	data = fileIndex->openFile(_file);
+	data = fileIndex->openFile(file);
 	if(data) {
 		rw::LoaderTXD loader;
-		loader.loadFromMemory(data, loaded);
+		loaded = loader.loadFromMemory(data);
 	}
 }
 
 void LoadTextureArchiveJob::complete()
 {
-	for (auto& p : loaded) {
-		p.second->commit();
-		archive[p.first] = p.second;
+	if (loaded) {
+		for (auto& p : loaded->getTextures()) {
+			p.second->commit();
+		}
 	}
+	completed(loaded);
 }

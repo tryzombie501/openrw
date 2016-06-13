@@ -1,6 +1,6 @@
 #include <boost/test/unit_test.hpp>
 
-#include <data/Texture.hpp>
+#include <data/TextureDictionary.hpp>
 #include <gl/gl_core_3_3.h>
 
 #include <cstdint>

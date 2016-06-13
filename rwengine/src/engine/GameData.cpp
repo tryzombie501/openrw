@@ -82,7 +82,11 @@ std::string fixPath(std::string path) {
 
 
 GameData::GameData(Logger* log, WorkContext* work, const std::string& path)
-: datpath(path), logger(log), workContext(work), engine(nullptr)
+	: datpath(path)
+	, logger(log)
+	, workContext(work)
+	, engine(nullptr)
+	, textureDictionaries({{"generic", new rw::TextureDictionary}})
 {
 }
 
@@ -424,7 +428,19 @@ void GameData::loadTXD(const std::string& name, bool async)
 
 	loadedFiles[name] = true;
 
-	auto j = new LoadTextureArchiveJob(workContext, &index, textures, name);
+	auto callback =
+					[this, name](rw::TextureDictionary* t)
+	{
+		if (t) {
+			textureDictionaries["generic"]->addTextures(t);
+			delete t;
+		}
+	};
+
+	auto j = new LoadTextureArchiveJob(workContext,
+									   &index,
+									   name,
+									   callback);
 
 	if( async ) {
 		workContext->queueJob( j );

@@ -15,7 +15,7 @@ class Logger;
 #include <data/CollisionModel.hpp>
 #include <data/GameTexts.hpp>
 #include <data/ZoneData.hpp>
-#include <data/Texture.hpp>
+#include <data/TextureDictionary.hpp>
 
 #include <audio/MADStream.hpp>
 #include <platform/FileIndex.hpp>
@@ -154,10 +154,9 @@ public:
 
 	FileHandle openFile(const std::string& name);
 
-	rw::Texture* findTexture( const std::string& name, const std::string& alpha = "" )
+	rw::Texture* findTexture( const std::string& name, const std::string& archive = "generic" )
 	{
-		RW_UNUSED(alpha);
-		return textures[name];
+		return textureDictionaries[archive]->findTexture(name);
 	}
 	
 	FileIndex index;
@@ -293,9 +292,9 @@ public:
 private:
 
 	/**
-	 * Loaded textures
+	 * Loaded texture dictionaries
 	 */
-	std::map<std::string, rw::Texture*> textures;
+	std::map<std::string, rw::TextureDictionary*> textureDictionaries;
 };
 
 #endif
