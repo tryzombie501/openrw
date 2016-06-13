@@ -74,10 +74,10 @@ void ObjectRenderer::renderGeometry(Model* model,
 				}
 				if( tex )
 				{
-					if( tex->isTransparent() ) {
+					if( tex->hasAlpha() ) {
 						isTransparent = true;
 					}
-					dp.textures = {tex->getName()};
+					dp.textures = {tex->getNativeHandle()};
 				}
 			}
 

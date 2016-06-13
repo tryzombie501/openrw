@@ -11,7 +11,7 @@
 #include <loaders/RWBinaryStream.hpp>
 #include <gl/DrawBuffer.hpp>
 #include <gl/GeometryBuffer.hpp>
-#include <gl/TextureData.hpp>
+#include <data/Texture.hpp>
 
 /**
  * ModelFrame stores the hierarchy of a model's geometry as well as default
@@ -81,7 +81,7 @@ public:
 	struct Texture {
 		std::string name;
 		std::string alphaName;
-		TextureData::Handle texture;
+		rw::Texture* texture;
 	};
 	
 	enum {

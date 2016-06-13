@@ -371,7 +371,7 @@ void GameRenderer::renderWorld(GameWorld* world, const ViewCamera &camera, float
 	ModelRef& arrowModel = world->data->models["arrow"];
 	if( arrowModel && arrowModel->resource )
 	{
-		auto arrowTex = world->data->textures[{"copblue",""}];
+		auto arrowTex = world->data->findTexture("copblue");
 		auto arrowFrame = arrowModel->resource->findFrame( "arrow" );
 		for( auto& blip : world->state->radarBlips )
 		{
@@ -398,7 +398,7 @@ void GameRenderer::renderWorld(GameWorld* world, const ViewCamera &camera, float
 				model = glm::scale( model, glm::vec3(1.5f, 1.5f, 1.5f) );
 
 				Renderer::DrawParameters dp;
-				dp.textures = {arrowTex->getName()};
+				dp.textures = {arrowTex->getNativeHandle()};
 				dp.ambient = 1.f;
 				dp.colour = glm::u8vec4(255, 255, 255, 255);
 
@@ -457,7 +457,7 @@ void GameRenderer::renderWorld(GameWorld* world, const ViewCamera &camera, float
 		auto splash = world->data->findTexture(world->state->currentSplash);
 		if ( splash )
 		{
-			splashTexName = splash->getName();
+			splashTexName = splash->getNativeHandle();
 		}
 	}
 
@@ -556,7 +556,7 @@ void GameRenderer::renderGeometry(Model* model, size_t g, const glm::mat4& model
 				}
 				if( tex )
 				{
-					dp.textures = {tex->getName()};
+					dp.textures = {tex->getNativeHandle()};
 				}
 			}
 
@@ -592,7 +592,7 @@ void GameRenderer::renderAreaIndicator(const AreaIndicatorInfo* info)
 	glm::vec3 scale = info->radius + 0.15f * glm::sin(_renderWorld->getGameTime() * 5.f);
 	
 	Renderer::DrawParameters dp;
-	dp.textures = {data->findTexture("cloud1")->getName()};
+	dp.textures = {data->findTexture("cloud1")->getNativeHandle()};
 	dp.ambient = 1.f;
 	dp.colour = glm::u8vec4(50, 100, 255, 128);
 	dp.start = 0;
@@ -666,7 +666,7 @@ void GameRenderer::renderEffects(GameWorld* world)
 		//m = glm::translate(m, p);
 
 		Renderer::DrawParameters dp;
-		dp.textures = {particle.texture->getName()};
+		dp.textures = {particle.texture->getNativeHandle()};
 		dp.ambient = 1.f;
 		dp.colour = glm::u8vec4(particle.colour * 255.f);
 		dp.start = 0;
@@ -682,7 +682,7 @@ void GameRenderer::drawOnScreenText()
 	/// @ TODO
 }
 
-void GameRenderer::drawTexture(TextureData* texture, glm::vec4 extents)
+void GameRenderer::drawTexture(rw::Texture* texture, glm::vec4 extents)
 {
 	glUseProgram(ssRectProgram);
 
@@ -702,7 +702,7 @@ void GameRenderer::drawTexture(TextureData* texture, glm::vec4 extents)
 	glUniform2f(ssRectSize, extents.z, extents.w);
 
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, texture->getName());
+	glBindTexture(GL_TEXTURE_2D, texture->getNativeHandle());
 	glUniform1i(ssRectTexture, 0);
 	glUniform4f(ssRectColour, 0.f, 0.f, 0.f, 1.f);
 

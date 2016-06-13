@@ -29,8 +29,6 @@ void rw::Texture::setLevelData(unsigned int level, unsigned int width, unsigned 
 		pixelBytes = 2;
 		break;
 	case TextureFormat::RGB_888:
-		pixelBytes = 3;
-		break;
 	case TextureFormat::RGBA_8888:
 		pixelBytes = 4;
 		break;
@@ -66,7 +64,7 @@ int rw::Texture::commit()
 	{
 	case TextureFormat::ARGB_1555:
 		internalFormat = GL_RGB5_A1;
-		format = GL_BGRA;
+		format = GL_RGBA;
 		type = GL_UNSIGNED_SHORT_1_5_5_5_REV;
 		break;
 	case TextureFormat::RGB_565:
@@ -91,7 +89,7 @@ int rw::Texture::commit()
 		break;
 	case TextureFormat::RGB_888:
 		internalFormat = GL_RGB8;
-		format = GL_RGB;
+		format = GL_BGRA;
 		type = GL_UNSIGNED_BYTE;
 		break;
 	case TextureFormat::RGB_555:

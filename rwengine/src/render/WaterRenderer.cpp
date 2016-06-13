@@ -154,7 +154,7 @@ void WaterRenderer::render(GameRenderer* renderer, GameWorld* world)
 	r->setUniform(waterProg, "inverseVP", ivp);
 
 	wdp.count = gridGeom.getCount();
-	wdp.textures = {waterTex->getName(), dataTexture};
+	wdp.textures = {waterTex->getNativeHandle(), dataTexture};
 	
 	r->drawArrays(m, &gridDraw, wdp);
 

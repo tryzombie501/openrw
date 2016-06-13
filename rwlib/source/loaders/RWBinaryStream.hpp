@@ -344,7 +344,7 @@ namespace RW
 			}
 		}
 		
-		template<class T> T readStructure()
+		template<class T> T& readStructure()
 		{
 			return *reinterpret_cast<T*>(data+offset+sizeof(BSSectionHeader)*2);
 		}

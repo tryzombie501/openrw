@@ -41,6 +41,7 @@ set(TEST_SOURCES
 	"test_worker.cpp"
 	"test_world.cpp"
 	"test_TextureDictionary.cpp"
+	"test_LoaderTXD.cpp"
 
 	# Hack in rwgame sources until there's a per-target test suite
 	"${CMAKE_SOURCE_DIR}/rwgame/GameConfig.cpp"

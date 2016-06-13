@@ -5,8 +5,8 @@
 class Logger;
 
 #include <rw/types.hpp>
+#include <job/WorkContext.hpp>
 #include <loaders/LoaderIMG.hpp>
-#include <loaders/LoaderTXD.hpp>
 #include <loaders/LoaderDFF.hpp>
 #include <loaders/LoaderIDE.hpp>
 #include <loaders/LoaderIFP.hpp>
@@ -15,9 +15,9 @@ class Logger;
 #include <data/CollisionModel.hpp>
 #include <data/GameTexts.hpp>
 #include <data/ZoneData.hpp>
+#include <data/Texture.hpp>
 
 #include <audio/MADStream.hpp>
-#include <gl/TextureData.hpp>
 #include <platform/FileIndex.hpp>
 
 #include <memory>
@@ -154,9 +154,10 @@ public:
 
 	FileHandle openFile(const std::string& name);
 
-	TextureData::Handle findTexture( const std::string& name, const std::string& alpha = "" )
+	rw::Texture* findTexture( const std::string& name, const std::string& alpha = "" )
 	{
-		return textures[{name, alpha}];
+		RW_UNUSED(alpha);
+		return textures[name];
 	}
 	
 	FileIndex index;
@@ -215,11 +216,6 @@ public:
 	 * Vehicle information
 	 */
 	std::map<std::string, VehicleInfoHandle> vehicleInfo;
-	
-	/**
-	 * Texture Loader
-	 */
-	TextureLoader textureLoader;
 
 	/**
 	 * Weather Loader
@@ -230,11 +226,6 @@ public:
 	 * Loaded models
 	 */
 	std::map<std::string, ResourceHandle<Model>::Ref> models;
-
-	/**
-	 * Loaded textures (Textures are ID by name and alpha pairs)
-	 */
-	std::map<std::pair<std::string, std::string>, TextureData::Handle> textures;
 
 	/**
 	 * Texture atlases.
@@ -298,6 +289,13 @@ public:
 	 * Determines whether the given path is a valid game directory.
 	 */
 	static bool isValidGameDirectory(const std::string& path);
+
+private:
+
+	/**
+	 * Loaded textures
+	 */
+	std::map<std::string, rw::Texture*> textures;
 };
 
 #endif

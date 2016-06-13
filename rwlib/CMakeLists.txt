@@ -10,8 +10,6 @@ SET(RWLIB_SOURCES
 	"source/gl/DrawBuffer.cpp"
 	"source/gl/GeometryBuffer.hpp"
 	"source/gl/GeometryBuffer.cpp"
-	"source/gl/TextureData.hpp"
-	"source/gl/TextureData.cpp"
 
 	"source/rw/types.hpp"
 	"source/rw/defines.hpp"

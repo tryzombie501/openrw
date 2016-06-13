@@ -128,9 +128,9 @@ void MapRenderer::draw(GameWorld* world, const MapInfo& mi)
 	{
 		std::string num = (m < 10 ? "0" : "");
 		std::string name = "radar" + num +  std::to_string(m);
-		auto texture = world->data->textures[{name,""}];
+		auto texture = world->data->findTexture(name);
 		
-		glBindTexture(GL_TEXTURE_2D, texture->getName());
+		glBindTexture(GL_TEXTURE_2D, texture->getNativeHandle());
 		
 		int mX = initX + (m % mapBlockLine);
 		int mY = initY + (m / mapBlockLine);
@@ -153,13 +153,13 @@ void MapRenderer::draw(GameWorld* world, const MapInfo& mi)
 		glDisable(GL_STENCIL_TEST);
 		// We only need the outer ring if we're clipping.
 		glBlendFuncSeparate(GL_DST_COLOR, GL_ZERO, GL_ONE, GL_ZERO);
-		TextureData::Handle radarDisc = data->findTexture("radardisc");
+		auto radarDisc = data->findTexture("radardisc");
 
 		glm::mat4 model;
 		model = glm::translate(model, glm::vec3(mi.screenPosition, 0.0f));
 		model = glm::scale(model, glm::vec3(mi.screenSize*1.07));
 		renderer->setUniform(rectProg, "model", model);
-		glBindTexture(GL_TEXTURE_2D, radarDisc->getName());
+		glBindTexture(GL_TEXTURE_2D, radarDisc->getNativeHandle());
 		glDrawArrays( GL_TRIANGLE_STRIP, 0, 4 );
 		glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ZERO);
 	}
@@ -222,7 +222,7 @@ void MapRenderer::drawBlip(const glm::vec2& coord, const glm::mat4& view, const 
 	if ( !texture.empty() )
 	{
 		auto sprite= data->findTexture(texture);
-		tex = sprite->getName();
+		tex = sprite->getNativeHandle();
 		renderer->setUniform(rectProg, "colour", glm::vec4(0.f, 0.f, 0.f, 1.f));
 	}
 	else

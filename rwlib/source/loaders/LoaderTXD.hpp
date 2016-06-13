@@ -1,38 +1,43 @@
-#pragma once
-#ifndef _TEXTURELOADER_HPP_
-#define _TEXTURELOADER_HPP_
+#ifndef RWLIB_LOADERTXD_HPP
+#define RWLIB_LOADERTXD_HPP
+#include <data/Texture.hpp>
 
 #include <loaders/RWBinaryStream.hpp>
-
 #include <job/WorkContext.hpp>
+
 #include <platform/FileHandle.hpp>
 #include <functional>
 #include <string>
 #include <map>
 
-// This might suffice
-#include <gl/TextureData.hpp>
-typedef std::map<std::pair<std::string, std::string>, TextureData::Handle> TextureArchive;
+
+typedef std::map<std::string, rw::Texture*> TextureDictionary;
 
 class FileIndex;
 
-class TextureLoader
+namespace rw
+{
+class LoaderTXD
 {
 public:
-	bool loadFromMemory(FileHandle file, TextureArchive& inTextures);
+	bool loadFromMemory(FileHandle file, TextureDictionary& archive);
+private:
+	rw::Texture* createTexture(RW::BSTextureNative&, RW::BinaryStreamSection&);
 };
+}
 
 // TODO: refactor this interface to be more like ModelLoader so they can be rolled into one.
 class LoadTextureArchiveJob : public WorkJob
 {
 private:
-	TextureArchive& archive;
+	TextureDictionary& archive;
+	TextureDictionary loaded;
 	FileIndex* fileIndex;
 	std::string _file;
 	FileHandle data;
 public:
 
-	LoadTextureArchiveJob(WorkContext* context, FileIndex* index, TextureArchive& inTextures, const std::string& file);
+	LoadTextureArchiveJob(WorkContext* context, FileIndex* index, TextureDictionary& inTextures, const std::string& file);
 
 	void work();
 

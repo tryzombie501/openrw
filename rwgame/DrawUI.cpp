@@ -164,11 +164,11 @@ void drawPlayerInfo(PlayerController* player, GameWorld* world, GameRenderer* re
 		itemTextureName = "pistol";
 	}
 
-	TextureData::Handle itemTexture = render->getData()->findTexture(itemTextureName);
+	auto itemTexture = render->getData()->findTexture(itemTextureName);
 	RW_CHECK(itemTexture != nullptr, "Item has 0 texture");
 	if (itemTexture != nullptr) {
-		RW_CHECK(itemTexture->getName() != 0, "Item has 0 texture");
-		render->drawTexture(itemTexture.get(),
+		RW_CHECK(itemTexture->getNativeHandle() != 0, "Item has 0 texture");
+		render->drawTexture(itemTexture,
 							glm::vec4(iconX,
 									  iconY,
 									  ui_weaponSize,

@@ -3,8 +3,8 @@
 #include <engine/GameState.hpp>
 #include <loaders/LoaderIPL.hpp>
 #include <loaders/LoaderDFF.hpp>
-#include <loaders/LoaderIDE.hpp>
 #include <loaders/LoaderCOL.hpp>
+#include <loaders/LoaderTXD.hpp>
 #include <data/ObjectData.hpp>
 #include <data/WeaponData.hpp>
 #include <script/SCMFile.hpp>

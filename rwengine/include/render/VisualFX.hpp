@@ -1,7 +1,7 @@
 #pragma once
 
 #include <glm/glm.hpp>
-#include <gl/TextureData.hpp>
+#include <data/Texture.hpp>
 
 /**
  * Represents a scene effect: lighting, particles etc.
@@ -42,7 +42,7 @@ public:
 		float lifetime;
 
 		/** Texture name */
-		TextureData::Handle texture;
+		rw::Texture* texture;
 
 		/** Size of particle */
 		glm::vec2 size;
