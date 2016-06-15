@@ -6,11 +6,10 @@
 
 namespace RW
 {
-
 std::unique_ptr<BinaryStream> BinaryStream::parse(std::string filename)
 {
 	std::ifstream dfile(filename);
-	if ( ! dfile.is_open()) {
+	if (!dfile.is_open()) {
 		std::cerr << "Error opening file " << filename << std::endl;
 		return nullptr;
 	}
@@ -32,7 +31,8 @@ std::unique_ptr<BinaryStream> BinaryStream::parse(std::string filename)
 
 	size_t offset = 0;
 	while (offset < length) {
-		nativeSectionHeader_t *sectionHeader = reinterpret_cast<nativeSectionHeader_t *>(data + offset);
+		nativeSectionHeader_t *sectionHeader =
+		    reinterpret_cast<nativeSectionHeader_t *>(data + offset);
 		sectionHeader_t *sec = new sectionHeader_t;
 		sec->ID = sectionHeader->ID;
 		sec->size = sectionHeader->size;
@@ -47,22 +47,25 @@ std::unique_ptr<BinaryStream> BinaryStream::parse(std::string filename)
 			break;
 		}
 
-		std::cout << "Section " << std::hex << sectionHeader->ID
-			<< " (" << sectionIdString(sectionHeader->ID) << ")"
-			<< " - " << std::dec << sectionHeader->size << " bytes" << std::endl;
-/*
-		std::cout << "Offset " << std::hex << offset << std::endl;
-*/
+		std::cout << "Section " << std::hex << sectionHeader->ID << " ("
+		          << sectionIdString(sectionHeader->ID) << ")"
+		          << " - " << std::dec << sectionHeader->size << " bytes"
+		          << std::endl;
+		/*
+		        std::cout << "Offset " << std::hex << offset << std::endl;
+		*/
 
 		size_t bytesOfData = 0;
 		switch (sectionHeader->ID) {
 		case STRUCT:
 			bytesOfData = sectionHeader->size;
 			sec->data = new uint8_t[bytesOfData];
-			memcpy(sec->data, data + offset + sizeof(nativeSectionHeader_t), bytesOfData);
+			memcpy(sec->data, data + offset + sizeof(nativeSectionHeader_t),
+			       bytesOfData);
 			break;
 		}
-		// std::cout << "It has " << std::dec << bytesOfData << " bytes of data!" << std::endl;
+		// std::cout << "It has " << std::dec << bytesOfData << " bytes of
+		// data!" << std::endl;
 		offset += sizeof(nativeSectionHeader_t) + bytesOfData;
 
 		// std::cout << std::endl;
@@ -78,12 +81,16 @@ std::unique_ptr<BinaryStream> BinaryStream::parse(std::string filename)
 std::string BinaryStream::sectionIdString(uint32_t id)
 {
 	switch (id) {
-	case STRUCT: return "STRUCT";
-	case EXTENSION: return "EXTENSION";
-	case TEXTURE_NATIVE: return "TEXTURE_NATIVE";
-	case TEXTURE_DICTIONARY: return "TEXTURE_DICTIONARY";
-	default: return "UNKNOWN";
+	case STRUCT:
+		return "STRUCT";
+	case EXTENSION:
+		return "EXTENSION";
+	case TEXTURE_NATIVE:
+		return "TEXTURE_NATIVE";
+	case TEXTURE_DICTIONARY:
+		return "TEXTURE_DICTIONARY";
+	default:
+		return "UNKNOWN";
 	}
 }
-
 }

@@ -2,12 +2,7 @@
 
 #include <cstring>
 
-LoaderSDT::LoaderSDT()
-: m_version(GTAIIIVC)
-, m_assetCount(0)
-{
-
-	}
+LoaderSDT::LoaderSDT() : m_version(GTAIIIVC), m_assetCount(0) {}
 
 typedef struct {
 	char chunkId[4];
@@ -44,7 +39,8 @@ bool LoaderSDT::load(const std::string& filename)
 		m_assetCount = fileSize / 20;
 		m_assets.resize(m_assetCount);
 
-		if ((m_assetCount = fread(&m_assets[0], sizeof(LoaderSDTFile), m_assetCount, fp)) != fileSize / 20) {
+		if ((m_assetCount = fread(&m_assets[0], sizeof(LoaderSDTFile),
+		                          m_assetCount, fp)) != fileSize / 20) {
 			m_assets.resize(m_assetCount);
 			std::cout << "Error reading records in SDT archive" << std::endl;
 		}
@@ -72,8 +68,9 @@ char* LoaderSDT::loadToMemory(size_t index, bool asWave)
 	LoaderSDTFile assetInfo;
 	bool found = findAssetInfo(index, assetInfo);
 
-	if(!found) {
-		std::cerr << "Asset " << std::to_string(index) << " not found!" << std::endl;
+	if (!found) {
+		std::cerr << "Asset " << std::to_string(index) << " not found!"
+		          << std::endl;
 		return nullptr;
 	}
 
@@ -92,8 +89,8 @@ char* LoaderSDT::loadToMemory(size_t index, bool asWave)
 			memcpy(header->format, "WAVE", 4);
 			memcpy(header->fmt.id, "fmt ", 4);
 			header->fmt.size = sizeof(WaveHeader::fmt) - 8;
-			header->fmt.audioFormat = 1; // PCM
-			header->fmt.numChannels = 1; // Mono
+			header->fmt.audioFormat = 1;  // PCM
+			header->fmt.numChannels = 1;  // Mono
 			header->fmt.sampleRate = assetInfo.sampleRate;
 			header->fmt.byteRate = assetInfo.sampleRate * 2;
 			header->fmt.blockAlign = 2;
@@ -109,29 +106,32 @@ char* LoaderSDT::loadToMemory(size_t index, bool asWave)
 
 		fseek(fp, assetInfo.offset, SEEK_SET);
 		if (fread(sample_data, 1, assetInfo.size, fp) != assetInfo.size) {
-			std::cerr << "Error reading asset " << std::to_string(index) << std::endl;
+			std::cerr << "Error reading asset " << std::to_string(index)
+			          << std::endl;
 		}
 
 		fclose(fp);
 		return raw_data;
-	}
-	else
+	} else
 		return 0;
 }
 
 /// Writes the contents of assetname to filename
-bool LoaderSDT::saveAsset(size_t index, const std::string& filename, bool asWave)
+bool LoaderSDT::saveAsset(size_t index, const std::string& filename,
+                          bool asWave)
 {
 	char* raw_data = loadToMemory(index, asWave);
-	if(!raw_data)
+	if (!raw_data)
 		return false;
 
 	FILE* dumpFile = fopen(filename.c_str(), "wb");
-	if(dumpFile) {
+	if (dumpFile) {
 		LoaderSDTFile asset;
-		if(findAssetInfo(index, asset)) {
-			fwrite(raw_data, 1, asset.size + (asWave ? sizeof(WaveHeader) : 0), dumpFile);
-			printf("=> SDT: Saved %zu to disk with filename %s\n", index, filename.c_str());
+		if (findAssetInfo(index, asset)) {
+			fwrite(raw_data, 1, asset.size + (asWave ? sizeof(WaveHeader) : 0),
+			       dumpFile);
+			printf("=> SDT: Saved %zu to disk with filename %s\n", index,
+			       filename.c_str());
 		}
 		fclose(dumpFile);
 
@@ -144,13 +144,9 @@ bool LoaderSDT::saveAsset(size_t index, const std::string& filename, bool asWave
 }
 
 /// Get the information of an asset by its index
-const LoaderSDTFile &LoaderSDT::getAssetInfoByIndex(size_t index) const
+const LoaderSDTFile& LoaderSDT::getAssetInfoByIndex(size_t index) const
 {
 	return m_assets[index];
 }
 
-
-uint32_t LoaderSDT::getAssetCount() const
-{
-	return m_assetCount;
-}
+uint32_t LoaderSDT::getAssetCount() const { return m_assetCount; }

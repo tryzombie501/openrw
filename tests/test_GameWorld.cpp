@@ -9,11 +9,11 @@ BOOST_AUTO_TEST_SUITE(GameWorldTests)
 BOOST_AUTO_TEST_CASE(test_gameobject_id)
 {
 	GameWorld gw(&Global::get().log, &Global::get().work, Global::get().d);
-	
+
 	auto object1 = gw.createInstance(1337, glm::vec3(100.f, 0.f, 0.f));
 	auto object2 = gw.createInstance(1337, glm::vec3(100.f, 0.f, 100.f));
 
-	BOOST_CHECK_NE( object1->getGameObjectID(), object2->getGameObjectID() );
+	BOOST_CHECK_NE(object1->getGameObjectID(), object2->getGameObjectID());
 }
 
 BOOST_AUTO_TEST_SUITE_END()

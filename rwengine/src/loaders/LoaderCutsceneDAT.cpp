@@ -10,7 +10,7 @@ void LoaderCutsceneDAT::load(CutsceneTracks &tracks, FileHandle file)
 	ss >> numZooms;
 	ss.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 
-	for(int i = 0; i < numZooms; ++i) {
+	for (int i = 0; i < numZooms; ++i) {
 		float t = 0.f;
 		float z = 0.f;
 		ss >> t;
@@ -27,7 +27,7 @@ void LoaderCutsceneDAT::load(CutsceneTracks &tracks, FileHandle file)
 	ss >> numRotations;
 	ss.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 
-	for(int i = 0; i < numRotations; ++i) {
+	for (int i = 0; i < numRotations; ++i) {
 		float t = 0.f;
 		float r = 0.f;
 		ss >> t;
@@ -44,7 +44,7 @@ void LoaderCutsceneDAT::load(CutsceneTracks &tracks, FileHandle file)
 	ss >> numPositions;
 	ss.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 
-	for(int i = 0; i < numPositions; ++i) {
+	for (int i = 0; i < numPositions; ++i) {
 		float t = 0.f;
 		glm::vec3 p;
 		ss >> t;
@@ -65,7 +65,7 @@ void LoaderCutsceneDAT::load(CutsceneTracks &tracks, FileHandle file)
 	ss >> numTargets;
 	ss.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 
-	for(int i = 0; i < numTargets; ++i) {
+	for (int i = 0; i < numTargets; ++i) {
 		float t = 0.f;
 		glm::vec3 p;
 		ss >> t;

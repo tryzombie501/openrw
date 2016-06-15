@@ -122,20 +122,20 @@ html,body { font-family: sans-serif; }
 
 HttpServer::HttpServer(RWGame* game, GameWorld* world)
     : game(game), world(world), paused(false), lastBreakpoint(nullptr)
-{}
+{
+}
 
 void HttpServer::run()
 {
-    listener.listen(8091);
+	listener.listen(8091);
 
 	std::cout << "STARTING HTTP SERVER" << std::endl;
 
-    while ( game->getWindow().isOpen() ) {
+	while (game->getWindow().isOpen()) {
 		sf::TcpSocket client;
 		if (listener.accept(client) == sf::Socket::Done) {
-			std::cout << "New connection from "
-				<< client.getRemoteAddress() << ":" << client.getRemotePort()
-				<< std::endl;
+			std::cout << "New connection from " << client.getRemoteAddress()
+			          << ":" << client.getRemotePort() << std::endl;
 
 			char buf[1024];
 			size_t received;
@@ -143,9 +143,9 @@ void HttpServer::run()
 			buf[received] = '\0';
 			std::cout << "Got " << received << " bytes: " << buf << std::endl;
 
-			try
-			{
-				std::regex regex_http_first_line("(\\w+)\\s+(/.*?)\\s+HTTP/\\d+.\\d+");
+			try {
+				std::regex regex_http_first_line(
+				    "(\\w+)\\s+(/.*?)\\s+HTTP/\\d+.\\d+");
 				std::cmatch regex_match;
 				std::regex_search(buf, regex_match, regex_http_first_line);
 
@@ -156,9 +156,7 @@ void HttpServer::run()
 					std::string response = dispatch(http_method, http_path);
 					client.send(response.c_str(), response.size());
 				}
-			}
-			catch(std::regex_error er)
-			{
+			} catch (std::regex_error er) {
 				std::cerr << er.what() << " " << er.code() << std::endl;
 			}
 
@@ -169,208 +167,194 @@ void HttpServer::run()
 	listener.close();
 }
 
-void HttpServer::handleBreakpoint(const SCMBreakpoint &bp)
+void HttpServer::handleBreakpoint(const SCMBreakpoint& bp)
 {
-    lastBreakpoint = &bp;
-    paused = true;
+	lastBreakpoint = &bp;
+	paused = true;
 
-    while( paused ) {
-        // Do nothing
-    }
+	while (paused) {
+		// Do nothing
+	}
 }
 std::string thread_stack(SCMThread& th)
 {
-    std::stringstream ss;
-    for(unsigned int i = 0; i < th.stackDepth; ++i)
-    {
-        bool last = (th.stackDepth == i+1);
-        ss << th.calls[i]
-            << (last ? "" : ",");
-    }
-    return ss.str();
+	std::stringstream ss;
+	for (unsigned int i = 0; i < th.stackDepth; ++i) {
+		bool last = (th.stackDepth == i + 1);
+		ss << th.calls[i] << (last ? "" : ",");
+	}
+	return ss.str();
 }
 
 #include <script/ScriptDisassembly.hpp>
 
 std::string describe_parameter(SCMOpcodeParameter& p)
 {
-    std::stringstream ss;
+	std::stringstream ss;
 
-    switch(p.type) {
-    case TGlobal:
-        ss << "G: " << p.globalPtr;
-        break;
-    case TLocal:
-        ss << "L: " << p.globalPtr;
-        break;
-    case TInt8:
-        ss << "i8: " << std::dec << (uint16_t)((uint8_t)p.integer);
-        break;
-    case TInt16:
-        ss << "i16: " << std::dec << (uint16_t)p.integer;
-        break;
-    case TInt32:
-        ss << "i32: " << std::dec << (uint32_t)p.integer;
-        break;
-    case TString:
-        ss << "str: \\\"" << p.string << "\\\"";
-        break;
-    case TFloat16:
-        ss << "f16: " << p.real;
-        break;
-    default:
-        ss << "OTHER";
-        break;
-    }
+	switch (p.type) {
+	case TGlobal:
+		ss << "G: " << p.globalPtr;
+		break;
+	case TLocal:
+		ss << "L: " << p.globalPtr;
+		break;
+	case TInt8:
+		ss << "i8: " << std::dec << (uint16_t)((uint8_t)p.integer);
+		break;
+	case TInt16:
+		ss << "i16: " << std::dec << (uint16_t)p.integer;
+		break;
+	case TInt32:
+		ss << "i32: " << std::dec << (uint32_t)p.integer;
+		break;
+	case TString:
+		ss << "str: \\\"" << p.string << "\\\"";
+		break;
+	case TFloat16:
+		ss << "f16: " << p.real;
+		break;
+	default:
+		ss << "OTHER";
+		break;
+	}
 
-    return ss.str();
+	return ss.str();
 }
 
 std::string thread_disassembly(ScriptMachine* script, SCMThread& th)
 {
-    std::stringstream ss;
+	std::stringstream ss;
 
-    ScriptDisassembly ds(script->getOpcodes(), script->getFile());
-    try {
-        ds.disassemble(th.programCounter);
-    }
-    catch(SCMException& ex)
-    {
+	ScriptDisassembly ds(script->getOpcodes(), script->getFile());
+	try {
+		ds.disassemble(th.programCounter);
+	} catch (SCMException& ex) {
+	}
 
-    }
+	auto it = ds.getInstructions().find(th.programCounter);
+	for (int i = 0; i < 5 && it != ds.getInstructions().end(); ++i) {
+		bool last = i + 1 == 5;
+		last = last || it == --ds.getInstructions().end();
+		auto opcode = it->second.opcode;
+		ScriptFunctionMeta* meta = nullptr;
+		ss << "{";
+		if (script->getOpcodes()->findOpcode((uint16_t)opcode, &meta)) {
+			ss << "\"address\": \"" << it->first << "\","
+			   << "\"function\": \"" << meta->signature << "\","
+			   << "\"arguments\": [";
+			SCMParams& parameters = it->second.parameters;
+			for (size_t p = 0; p < parameters.size(); ++p) {
+				if (p != 0)
+					ss << ",";
+				ss << "{"
+				   << "\"type\": " << parameters[p].type << ","
+				   << "\"value\": \"" << describe_parameter(parameters[p])
+				   << "\""
+				   << "}";
+			}
+			ss << "]";
+		} else {
+			ss << "\"err\":\"err\"";
+		}
+		ss << (last ? "}" : "},");
+		it++;
+	}
 
-    auto it = ds.getInstructions().find(th.programCounter);
-    for( int i = 0; i < 5 && it != ds.getInstructions().end(); ++i ) {
-        bool last = i+1 == 5;
-        last = last || it == --ds.getInstructions().end();
-        auto opcode = it->second.opcode;
-        ScriptFunctionMeta* meta = nullptr;
-        ss << "{";
-        if( script->getOpcodes()->findOpcode((uint16_t)opcode, &meta) )
-        {
-            ss << "\"address\": \"" << it->first << "\","
-               << "\"function\": \"" << meta->signature << "\","
-               << "\"arguments\": [";
-            SCMParams& parameters = it->second.parameters;
-            for(size_t p = 0; p < parameters.size(); ++p)
-            {
-                if(p != 0)
-                    ss << ",";
-                ss << "{"
-                   << "\"type\": " << parameters[p].type << ","
-                   << "\"value\": \"" << describe_parameter(parameters[p]) << "\""
-                   << "}";
-            }
-            ss << "]";
-        }
-        else
-        {
-            ss << "\"err\":\"err\"";
-        }
-        ss << (last ? "}" : "},");
-        it++;
-    }
-
-    return ss.str();
+	return ss.str();
 }
 
 std::string thread(ScriptMachine* script, SCMThread& th)
 {
-    std::stringstream ss;
-    ss << "{"
-       << "\"address\": \"" << &th << "\","
-       << "\"program_counter\": " << th.programCounter << ","
-       << "\"name\": \"" << th.name << "\","
-       << "\"wake_counter\": " << th.wakeCounter << ","
-       << "\"call_stack\": [" << thread_stack(th) << "],"
-       << "\"disassembly\": [" << thread_disassembly(script, th) << "]"
-       << "}";
-    return ss.str();
+	std::stringstream ss;
+	ss << "{"
+	   << "\"address\": \"" << &th << "\","
+	   << "\"program_counter\": " << th.programCounter << ","
+	   << "\"name\": \"" << th.name << "\","
+	   << "\"wake_counter\": " << th.wakeCounter << ","
+	   << "\"call_stack\": [" << thread_stack(th) << "],"
+	   << "\"disassembly\": [" << thread_disassembly(script, th) << "]"
+	   << "}";
+	return ss.str();
 }
 
 std::string breakpoint(const SCMBreakpoint* breakpoint)
 {
-    std::stringstream ss;
-    ss << "{";
-    if( breakpoint != nullptr )
-    {
-        ss << "\"program_counter\": " << breakpoint->pc << ","
-           << "\"thread\": \"" << breakpoint->thread << "\"";
-    }
-    ss << "}";
+	std::stringstream ss;
+	ss << "{";
+	if (breakpoint != nullptr) {
+		ss << "\"program_counter\": " << breakpoint->pc << ","
+		   << "\"thread\": \"" << breakpoint->thread << "\"";
+	}
+	ss << "}";
 
-    return ss.str();
+	return ss.str();
 }
 
 std::string HttpServer::getState() const
 {
-    if( !paused ) {
-        return R"({"status":"running"})";
-    }
-    else {
-        std::stringstream ss;
-        ss << "{";
-        ss << R"("status":"interrupted",)";
-        ss << R"("breakpoint": )" << breakpoint(lastBreakpoint) << ",";
-        ss << R"("threads": [)";
+	if (!paused) {
+		return R"({"status":"running"})";
+	} else {
+		std::stringstream ss;
+		ss << "{";
+		ss << R"("status":"interrupted",)";
+		ss << R"("breakpoint": )" << breakpoint(lastBreakpoint) << ",";
+		ss << R"("threads": [)";
 		auto it = game->getScript()->getThreads().begin();
-        for(unsigned int i = 0; i < game->getScript()->getThreads().size(); ++i,++it)
-        {
-            if( i != 0 )
-                ss << ",";
-            ss << thread(game->getScript(), *it);
-        }
-        ss << R"(])";
-        ss << "}";
-        return ss.str();
-    }
+		for (unsigned int i = 0; i < game->getScript()->getThreads().size();
+		     ++i, ++it) {
+			if (i != 0)
+				ss << ",";
+			ss << thread(game->getScript(), *it);
+		}
+		ss << R"(])";
+		ss << "}";
+		return ss.str();
+	}
 }
 
 std::string HttpServer::dispatch(std::string method, std::string path)
 {
-    std::stringstream ss;
-    std::string mime = "text/html";
-    if(path == "/debugger.js") {
-        ss << src_debugger_js;
-        mime = "application/javascript";
-    }
-    else if(path == "/state") {
-        ss << getState();
-        mime = "application/json";
-    }
-    else if(path == "/interrupt") {
-        game->getScript()->interuptNext();
-        /* Block until paused is true */
-        while( ! paused ) { std::this_thread::yield(); }
-        ss << getState();
-        mime = "application/json";
-    }
-    else if(path == "/step") {
-        if( paused ) {
-            game->getScript()->interuptNext();
-            lastBreakpoint = nullptr;
-            paused = false;
-        }
-        ss << getState();
-        mime = "application/json";
-    }
-    else if(path == "/continue") {
-        lastBreakpoint = nullptr;
-        paused = false;
-        ss << getState();
-        mime = "application/json";
-    }
-    else if(path == "/") {
-        ss << src_page;
-    }
-    else {
-        ss << "HTTP/1.1 404 Not Found\n\n";
-        return ss.str();
-    }
-    std::stringstream outs;
-    outs << "HTTP/1.1 200 OK\n"
-        << "Content-Type: " << mime<< "\n"
-        << "Connection: Close\n"
-        << "\n" << ss.str();
-    return outs.str();
+	std::stringstream ss;
+	std::string mime = "text/html";
+	if (path == "/debugger.js") {
+		ss << src_debugger_js;
+		mime = "application/javascript";
+	} else if (path == "/state") {
+		ss << getState();
+		mime = "application/json";
+	} else if (path == "/interrupt") {
+		game->getScript()->interuptNext();
+		/* Block until paused is true */
+		while (!paused) {
+			std::this_thread::yield();
+		}
+		ss << getState();
+		mime = "application/json";
+	} else if (path == "/step") {
+		if (paused) {
+			game->getScript()->interuptNext();
+			lastBreakpoint = nullptr;
+			paused = false;
+		}
+		ss << getState();
+		mime = "application/json";
+	} else if (path == "/continue") {
+		lastBreakpoint = nullptr;
+		paused = false;
+		ss << getState();
+		mime = "application/json";
+	} else if (path == "/") {
+		ss << src_page;
+	} else {
+		ss << "HTTP/1.1 404 Not Found\n\n";
+		return ss.str();
+	}
+	std::stringstream outs;
+	outs << "HTTP/1.1 200 OK\n"
+	     << "Content-Type: " << mime << "\n"
+	     << "Connection: Close\n"
+	     << "\n" << ss.str();
+	return outs.str();
 }

@@ -16,11 +16,14 @@ void SoundManager::SoundSource::loadFromFile(const std::string& filename)
 		size_t numRead = 0;
 		std::array<int16_t, 4096> readBuffer;
 
-		while ((numRead = sf_read_short(file, readBuffer.data(), readBuffer.size())) != 0) {
-			data.insert(data.end(), readBuffer.begin(), readBuffer.begin() + numRead);
+		while ((numRead = sf_read_short(file, readBuffer.data(),
+		                                readBuffer.size())) != 0) {
+			data.insert(data.end(), readBuffer.begin(),
+			            readBuffer.begin() + numRead);
 		}
 	} else {
-		std::cerr << "Error opening sound file \"" << filename << "\": " << sf_strerror(file) << std::endl;
+		std::cerr << "Error opening sound file \"" << filename
+		          << "\": " << sf_strerror(file) << std::endl;
 	}
 }
 
@@ -39,37 +42,32 @@ SoundManager::SoundBuffer::SoundBuffer()
 bool SoundManager::SoundBuffer::bufferData(SoundSource& soundSource)
 {
 	alCheck(alBufferData(
-		buffer,
-		soundSource.fileInfo.channels == 1 ? AL_FORMAT_MONO16 : AL_FORMAT_STEREO16,
-		&soundSource.data.front(),
-		soundSource.data.size() * sizeof(uint16_t),
-		soundSource.fileInfo.samplerate
-	));
+	    buffer, soundSource.fileInfo.channels == 1 ? AL_FORMAT_MONO16
+	                                               : AL_FORMAT_STEREO16,
+	    &soundSource.data.front(), soundSource.data.size() * sizeof(uint16_t),
+	    soundSource.fileInfo.samplerate));
 	alCheck(alSourcei(source, AL_BUFFER, buffer));
 
 	return true;
 }
 
-SoundManager::SoundManager()
-{
-	initializeOpenAL();
-}
+SoundManager::SoundManager() { initializeOpenAL(); }
 
 bool SoundManager::initializeOpenAL()
 {
 	alDevice = alcOpenDevice(NULL);
-	if ( ! alDevice) {
+	if (!alDevice) {
 		std::cerr << "Could not find OpenAL device!" << std::endl;
 		return false;
 	}
 
 	alContext = alcCreateContext(alDevice, NULL);
-	if ( ! alContext) {
+	if (!alContext) {
 		std::cerr << "Could not create OpenAL context!" << std::endl;
 		return false;
 	}
 
-	if ( ! alcMakeContextCurrent(alContext)) {
+	if (!alcMakeContextCurrent(alContext)) {
 		std::cerr << "Unable to make OpenAL context current!" << std::endl;
 		return false;
 	}
@@ -77,7 +75,8 @@ bool SoundManager::initializeOpenAL()
 	return true;
 }
 
-bool SoundManager::loadSound(const std::string& name, const std::string& fileName)
+bool SoundManager::loadSound(const std::string& name,
+                             const std::string& fileName)
 {
 	Sound* sound = nullptr;
 	auto sound_iter = sounds.find(name);
@@ -85,7 +84,9 @@ bool SoundManager::loadSound(const std::string& name, const std::string& fileNam
 	if (sound_iter != sounds.end()) {
 		sound = &sound_iter->second;
 	} else {
-		auto emplaced = sounds.emplace(std::piecewise_construct, std::forward_as_tuple(name), std::forward_as_tuple());
+		auto emplaced = sounds.emplace(std::piecewise_construct,
+		                               std::forward_as_tuple(name),
+		                               std::forward_as_tuple());
 		sound = &emplaced.first->second;
 
 		sound->source.loadFromFile(fileName);
@@ -118,7 +119,8 @@ bool SoundManager::isPlaying(const std::string& name)
 {
 	if (sounds.find(name) != sounds.end()) {
 		ALint sourceState;
-		alCheck(alGetSourcei(sounds[name].buffer.source, AL_SOURCE_STATE, &sourceState));
+		alCheck(alGetSourcei(sounds[name].buffer.source, AL_SOURCE_STATE,
+		                     &sourceState));
 		return AL_PLAYING == sourceState;
 	}
 
@@ -136,7 +138,8 @@ bool SoundManager::playBackground(const std::string& fileName)
 	return false;
 }
 
-bool SoundManager::loadMusic(const std::string& name, const std::string& fileName)
+bool SoundManager::loadMusic(const std::string& name,
+                             const std::string& fileName)
 {
 	MADStream* music = nullptr;
 	auto music_iter = musics.find(name);
@@ -144,7 +147,9 @@ bool SoundManager::loadMusic(const std::string& name, const std::string& fileNam
 	if (music_iter != musics.end()) {
 		music = &music_iter->second;
 	} else {
-		auto emplaced = musics.emplace(std::piecewise_construct, std::forward_as_tuple(name), std::forward_as_tuple());
+		auto emplaced = musics.emplace(std::piecewise_construct,
+		                               std::forward_as_tuple(name),
+		                               std::forward_as_tuple());
 		music = &emplaced.first->second;
 	}
 

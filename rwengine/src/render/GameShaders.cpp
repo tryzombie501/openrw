@@ -1,7 +1,7 @@
 #include <render/GameShaders.hpp>
 
-namespace GameShaders {
-
+namespace GameShaders
+{
 const char* WaterHQ::VertexShader = R"(
 #version 130
 #extension GL_ARB_explicit_attrib_location : enable
@@ -285,7 +285,6 @@ void main()
 	outColour = c * tint;
 })";
 
-
 const char* ScreenSpaceRect::VertexShader = R"(
 #version 130
 #extension GL_ARB_explicit_attrib_location : enable
@@ -345,5 +344,4 @@ void main()
 	vec4 c = texture2D(colour, TexCoords);
 	outColour = c;
 })";
-
 }

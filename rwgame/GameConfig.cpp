@@ -7,26 +7,23 @@
 
 const std::string kConfigDirectoryName("OpenRW");
 
-GameConfig::GameConfig(const std::string& configName, const std::string& configPath)
-	: m_configName(configName)
-	, m_configPath(configPath)
-	, m_valid(false)
-	, m_inputInvertY(false)
+GameConfig::GameConfig(const std::string& configName,
+                       const std::string& configPath)
+    : m_configName(configName)
+    , m_configPath(configPath)
+    , m_valid(false)
+    , m_inputInvertY(false)
 {
-	if (m_configPath.empty())
-	{
+	if (m_configPath.empty()) {
 		m_configPath = getDefaultConfigPath();
 	}
 
 	// Look up the path to use
 	auto configFile = getConfigFile();
 
-	if (ini_parse(configFile.c_str(), handler, this) < 0)
-	{
+	if (ini_parse(configFile.c_str(), handler, this) < 0) {
 		m_valid = false;
-	}
-	else
-	{
+	} else {
 		m_valid = true;
 	}
 }
@@ -36,10 +33,7 @@ std::string GameConfig::getConfigFile()
 	return m_configPath + "/" + m_configName;
 }
 
-bool GameConfig::isValid()
-{
-	return m_valid;
-}
+bool GameConfig::isValid() { return m_valid; }
 
 std::string GameConfig::getDefaultConfigPath()
 {
@@ -56,7 +50,8 @@ std::string GameConfig::getDefaultConfigPath()
 #elif defined(RW_OSX)
 	char* home = getenv("HOME");
 	if (home)
-		return std::string(home) + "/Library/Preferences/" + kConfigDirectoryName;
+		return std::string(home) + "/Library/Preferences/" +
+		       kConfigDirectoryName;
 
 #else
 #error Dont know how to find default config path
@@ -67,25 +62,19 @@ std::string GameConfig::getDefaultConfigPath()
 	return ".";
 }
 
-int GameConfig::handler(void* user,
-						 const char* section,
-						 const char* name,
-						 const char* value)
+int GameConfig::handler(void* user, const char* section, const char* name,
+                        const char* value)
 {
 	auto self = static_cast<GameConfig*>(user);
 #define MATCH(_s, _n) (strcmp(_s, section) == 0 && strcmp(_n, name) == 0)
 
-	if (MATCH("game", "path"))
-	{
+	if (MATCH("game", "path")) {
 		self->m_gamePath = value;
-	}
-	else if (MATCH("input", "invert_y"))
-	{
+	} else if (MATCH("input", "invert_y")) {
 		self->m_inputInvertY = atoi(value) > 0;
-	}
-	else
-	{
-		RW_MESSAGE("Unhandled config entry [" << section << "] " << name << " = " << value);
+	} else {
+		RW_MESSAGE("Unhandled config entry [" << section << "] " << name
+		                                      << " = " << value);
 		return 0;
 	}
 
@@ -93,4 +82,3 @@ int GameConfig::handler(void* user,
 
 #undef MATCH
 }
-

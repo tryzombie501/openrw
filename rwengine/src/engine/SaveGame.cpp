@@ -45,7 +45,7 @@ struct Block0RunningScript {
 	BlockDword unknown1;
 	BlockWord stackCounter;
 	BlockWord unknown2;
-	SCMByte variables[16*4];
+	SCMByte variables[16 * 4];
 	BlockDword timerA;
 	BlockDword timerB;
 	uint8_t ifFlag;
@@ -53,7 +53,7 @@ struct Block0RunningScript {
 	uint8_t unknown4;
 	uint8_t _align0;
 	BlockDword wakeTimer;
-	BlockWord ifNumber; // ?
+	BlockWord ifNumber;  // ?
 	uint8_t unknown[6];
 };
 
@@ -114,7 +114,7 @@ struct StructStoredCar {
 	uint8_t variantB;
 	uint8_t bombType;
 	uint8_t align0[2];
-	
+
 	// TODO Migrate to more available location (GameConstants?)
 	enum /*VehicleImmunities*/ {
 		Bulletproof = 1 << 0,
@@ -230,7 +230,7 @@ struct Block4Object {
 	BlockWord modelId;
 	BlockDword reference;
 	glm::vec3 position;
-	int8_t rotation[9]; /// @todo Confirm that this is: right, forward, down
+	int8_t rotation[9];  /// @todo Confirm that this is: right, forward, down
 	uint8_t unknown1[3];
 	float unknown2;
 	float unknown3[3];
@@ -356,7 +356,6 @@ struct Block10Data {
 	Block10Blip blips[32];
 };
 
-
 struct Block11Zone {
 	char name[8];
 	glm::vec3 coordA;
@@ -477,35 +476,37 @@ void SaveGame::writeGame(GameState& state, const std::string& file)
 	RW_UNIMPLEMENTED("Saving the game is not implemented yet.");
 }
 
-template<class T> bool readBlock(std::FILE* str, T& out) {
+template <class T>
+bool readBlock(std::FILE* str, T& out)
+{
 	return std::fread(&out, sizeof(out), 1, str) == 1;
 }
 
-#define READ_VALUE(var) \
-	if (! readBlock(loadFile, var)) { \
+#define READ_VALUE(var)                                                   \
+	if (!readBlock(loadFile, var)) {                                      \
 		std::cerr << file << ": Failed to load block " #var << std::endl; \
-		return false; \
+		return false;                                                     \
 	}
-#define READ_SIZE(var) \
-	if (! readBlock(loadFile, var)) { \
+#define READ_SIZE(var)                                                   \
+	if (!readBlock(loadFile, var)) {                                     \
 		std::cerr << file << ": Failed to load size " #var << std::endl; \
-		return false; \
+		return false;                                                    \
 	}
-#define CHECK_SIG(expected) \
-{\
-	char signature[4]; \
-	if(fread(signature, sizeof(char), 4, loadFile) != 4) { \
-		std::cerr << "Failed to read signature" << std::endl; \
-		return false; \
-	} \
-	if (strncmp(signature, expected, 3) != 0) { \
-		std::cerr << "Signature " expected " incorrect" << std::endl; \
-		return false; \
-	} \
-}
-#define BLOCK_HEADER(sizevar) \
+#define CHECK_SIG(expected)                                               \
+	{                                                                     \
+		char signature[4];                                                \
+		if (fread(signature, sizeof(char), 4, loadFile) != 4) {           \
+			std::cerr << "Failed to read signature" << std::endl;         \
+			return false;                                                 \
+		}                                                                 \
+		if (strncmp(signature, expected, 3) != 0) {                       \
+			std::cerr << "Signature " expected " incorrect" << std::endl; \
+			return false;                                                 \
+		}                                                                 \
+	}
+#define BLOCK_HEADER(sizevar)             \
 	fseek(loadFile, nextBlock, SEEK_SET); \
-	READ_SIZE(sizevar) \
+	READ_SIZE(sizevar)                    \
 	nextBlock += sizeof(sizevar) + sizevar;
 
 bool SaveGame::loadGame(GameState& state, const std::string& file)
@@ -517,18 +518,21 @@ bool SaveGame::loadGame(GameState& state, const std::string& file)
 	}
 
 	BlockSize nextBlock = 0;
-	
+
 	// BLOCK 0
 	BlockDword blockSize;
 	BLOCK_HEADER(blockSize);
 
-	static_assert(sizeof(BasicState) == 0xBC, "BasicState is not the right size");
+	static_assert(sizeof(BasicState) == 0xBC,
+	              "BasicState is not the right size");
 	READ_VALUE(state.basic)
 
 	// Convert utf-16 to utf-8
 	size_t bytes = 0;
-	for(;; bytes++ ) {
-		if(state.basic.saveName[bytes-1] == 0 && state.basic.saveName[bytes] == 0) break;
+	for (;; bytes++) {
+		if (state.basic.saveName[bytes - 1] == 0 &&
+		    state.basic.saveName[bytes] == 0)
+			break;
 	}
 	size_t outSize = 24;
 	char outBuff[48];
@@ -545,30 +549,29 @@ bool SaveGame::loadGame(GameState& state, const std::string& file)
 	CHECK_SIG("SCR")
 	READ_SIZE(scriptBlockSize)
 
-    BlockDword scriptVarCount;
+	BlockDword scriptVarCount;
 	READ_SIZE(scriptVarCount)
-    assert(scriptVarCount == state.script->getFile()->getGlobalsSize());
+	assert(scriptVarCount == state.script->getFile()->getGlobalsSize());
 
-	if(fread(state.script->getGlobals(), sizeof(SCMByte), scriptVarCount, loadFile) != scriptVarCount)
-	{
+	if (fread(state.script->getGlobals(), sizeof(SCMByte), scriptVarCount,
+	          loadFile) != scriptVarCount) {
 		std::cerr << "Failed to read script memory" << std::endl;
 		return false;
 	}
 
 	BlockDword scriptDataBlockSize;
 	READ_SIZE(scriptDataBlockSize);
-	if( scriptDataBlockSize != 0x03C8 ) {
+	if (scriptDataBlockSize != 0x03C8) {
 		return false;
 	}
-	
+
 	Block0ScriptData scriptData;
 	READ_VALUE(scriptData);
-	
+
 	BlockDword numScripts;
 	READ_SIZE(numScripts)
 	std::vector<Block0RunningScript> scripts(numScripts);
-	for (size_t i = 0; i < numScripts; ++i)
-	{
+	for (size_t i = 0; i < numScripts; ++i) {
 		READ_VALUE(scripts[i]);
 	}
 
@@ -581,7 +584,7 @@ bool SaveGame::loadGame(GameState& state, const std::string& file)
 	READ_SIZE(playerCount)
 
 	std::vector<Block1PlayerPed> players(playerCount);
-	for(unsigned int p = 0; p < playerCount; ++p) {
+	for (unsigned int p = 0; p < playerCount; ++p) {
 		Block1PlayerPed& ped = players[p];
 		READ_VALUE(ped.unknown0)
 		READ_VALUE(ped.unknown1)
@@ -593,11 +596,13 @@ bool SaveGame::loadGame(GameState& state, const std::string& file)
 		READ_VALUE(ped.align)
 
 #if RW_DEBUG
-		std::cout << "Player Health: " << ped.info.health << " (" << ped.info.armour << ")" << std::endl;
+		std::cout << "Player Health: " << ped.info.health << " ("
+		          << ped.info.armour << ")" << std::endl;
 		std::cout << "Player model: " << ped.modelName << std::endl;
-		for(int w = 0; w < 13; ++w) {
+		for (int w = 0; w < 13; ++w) {
 			auto& wep = players[p].info.weapons[w];
-			std::cout << "ID " << wep.weaponId << " " << wep.inClip << " " << wep.totalBullets << std::endl;
+			std::cout << "ID " << wep.weaponId << " " << wep.inClip << " "
+			          << wep.totalBullets << std::endl;
 		}
 #endif
 	}
@@ -622,8 +627,7 @@ bool SaveGame::loadGame(GameState& state, const std::string& file)
 	READ_VALUE(garageData.cars)
 
 	std::vector<StructGarage> garages(garageData.garageCount);
-	for (size_t i = 0; i < garageData.garageCount; ++i)
-	{
+	for (size_t i = 0; i < garageData.garageCount; ++i) {
 		READ_VALUE(garages[i]);
 	}
 
@@ -631,14 +635,18 @@ bool SaveGame::loadGame(GameState& state, const std::string& file)
 	std::cout << "Garages: " << garageData.garageCount << std::endl;
 	std::cout << "Bombs Free: " << garageData.freeBombs << std::endl;
 	std::cout << "Sprays Free: " << garageData.freeResprays << std::endl;
-	std::cout << "Portland IE: " << garageData.bfImportExportPortland << std::endl;
-	std::cout << "Shoreside IE: " << garageData.bfImportExportShoreside << std::endl;
+	std::cout << "Portland IE: " << garageData.bfImportExportPortland
+	          << std::endl;
+	std::cout << "Shoreside IE: " << garageData.bfImportExportShoreside
+	          << std::endl;
 	std::cout << "GA21 last shown: " << garageData.GA_21lastTime << std::endl;
 	for (int c = 0; c < 18; ++c) {
 		StructStoredCar& car = garageData.cars[c];
-		if (car.modelId == 0) continue;
-		std::cout << " " << car.modelId << " " << uint16_t(car.colorFG) << "/" << uint16_t(car.colorBG)
-				  << " " << car.immunities << std::endl;
+		if (car.modelId == 0)
+			continue;
+		std::cout << " " << car.modelId << " " << uint16_t(car.colorFG) << "/"
+		          << uint16_t(car.colorBG) << " " << car.immunities
+		          << std::endl;
 	}
 #endif
 
@@ -654,25 +662,29 @@ bool SaveGame::loadGame(GameState& state, const std::string& file)
 	READ_VALUE(boatCount)
 
 	std::vector<Block3Vehicle> vehicles(vehicleCount);
-	for(size_t v = 0; v < vehicleCount; ++v) {
+	for (size_t v = 0; v < vehicleCount; ++v) {
 		Block3Vehicle& veh = vehicles[v];
 		READ_VALUE(veh.unknown1)
 		READ_VALUE(veh.modelId)
 		READ_VALUE(veh.unknown2)
 		READ_VALUE(veh.state)
 #if RW_DEBUG
-		std::cout << " v " << veh.modelId << " " << veh.state.position.x << " " << veh.state.position.y << " " << veh.state.position.z << std::endl;
+		std::cout << " v " << veh.modelId << " " << veh.state.position.x << " "
+		          << veh.state.position.y << " " << veh.state.position.z
+		          << std::endl;
 #endif
 	}
 	std::vector<Block3Boat> boats(boatCount);
-	for(size_t v = 0; v < boatCount; ++v) {
+	for (size_t v = 0; v < boatCount; ++v) {
 		Block3Boat& veh = boats[v];
 		READ_VALUE(veh.unknown1)
 		READ_VALUE(veh.modelId)
 		READ_VALUE(veh.unknown2)
 		READ_VALUE(veh.state)
 #if RW_DEBUG
-		std::cout << " b " << veh.modelId << " " << veh.state.position.x << " " << veh.state.position.y << " " << veh.state.position.z << std::endl;
+		std::cout << " b " << veh.modelId << " " << veh.state.position.x << " "
+		          << veh.state.position.y << " " << veh.state.position.z
+		          << std::endl;
 #endif
 	}
 
@@ -686,9 +698,8 @@ bool SaveGame::loadGame(GameState& state, const std::string& file)
 	READ_VALUE(objectCount);
 
 	std::vector<Block4Object> objects(objectCount);
-	for(size_t o = 0; o < objectCount; ++o)
-	{
-		Block4Object &obj = objects[o];
+	for (size_t o = 0; o < objectCount; ++o) {
+		Block4Object& obj = objects[o];
 		READ_VALUE(obj.modelId)
 		READ_VALUE(obj.reference)
 		READ_VALUE(obj.position)
@@ -706,11 +717,15 @@ bool SaveGame::loadGame(GameState& state, const std::string& file)
 	}
 
 	for (size_t o = 0; o < objectCount; ++o) {
-		auto &obj = objects[o];
-		GameObject* inst = state.world->createInstance(obj.modelId, obj.position);
-		glm::vec3 right = glm::normalize(glm::vec3(obj.rotation[0], obj.rotation[1], obj.rotation[2]));
-		glm::vec3 forward = glm::normalize(glm::vec3(obj.rotation[3], obj.rotation[4], obj.rotation[5]));
-		glm::vec3 down = glm::normalize(glm::vec3(obj.rotation[6], obj.rotation[7], obj.rotation[8]));
+		auto& obj = objects[o];
+		GameObject* inst =
+		    state.world->createInstance(obj.modelId, obj.position);
+		glm::vec3 right = glm::normalize(
+		    glm::vec3(obj.rotation[0], obj.rotation[1], obj.rotation[2]));
+		glm::vec3 forward = glm::normalize(
+		    glm::vec3(obj.rotation[3], obj.rotation[4], obj.rotation[5]));
+		glm::vec3 down = glm::normalize(
+		    glm::vec3(obj.rotation[6], obj.rotation[7], obj.rotation[8]));
 		glm::mat3 m = glm::mat3(right, forward, -down);
 		inst->setRotation(glm::normalize(static_cast<glm::quat>(m)));
 	}
@@ -718,15 +733,22 @@ bool SaveGame::loadGame(GameState& state, const std::string& file)
 #if RW_DEBUG
 	std::cout << "Objects " << objectCount << std::endl;
 	for (size_t o = 0; o < objectCount; ++o) {
-		auto &obj = objects[o];
-		glm::vec3 right = glm::normalize(glm::vec3(obj.rotation[0], obj.rotation[1], obj.rotation[2]));
-		glm::vec3 forward = glm::normalize(glm::vec3(obj.rotation[3], obj.rotation[4], obj.rotation[5]));
-		glm::vec3 down = glm::normalize(glm::vec3(obj.rotation[6], obj.rotation[7], obj.rotation[8]));
+		auto& obj = objects[o];
+		glm::vec3 right = glm::normalize(
+		    glm::vec3(obj.rotation[0], obj.rotation[1], obj.rotation[2]));
+		glm::vec3 forward = glm::normalize(
+		    glm::vec3(obj.rotation[3], obj.rotation[4], obj.rotation[5]));
+		glm::vec3 down = glm::normalize(
+		    glm::vec3(obj.rotation[6], obj.rotation[7], obj.rotation[8]));
 		std::cout << "modelId " << obj.modelId << " ";
-		std::cout << "position " << obj.position.x << " "<< obj.position.y << " " << obj.position.z << " ";
-		std::cout << "right " << right.x << " "<< right.y << " " << right.z << " ";
-		std::cout << "forward " << forward.x << " "<< forward.y << " " << forward.z << " ";
-		std::cout << "down " << down.x << " " << down.y << " " << down.z << std::endl;
+		std::cout << "position " << obj.position.x << " " << obj.position.y
+		          << " " << obj.position.z << " ";
+		std::cout << "right " << right.x << " " << right.y << " " << right.z
+		          << " ";
+		std::cout << "forward " << forward.x << " " << forward.y << " "
+		          << forward.z << " ";
+		std::cout << "down " << down.x << " " << down.y << " " << down.z
+		          << std::endl;
 	}
 	std::cout << std::endl;
 #endif
@@ -753,17 +775,19 @@ bool SaveGame::loadGame(GameState& state, const std::string& file)
 	Block6Data craneData;
 	READ_VALUE(craneData.numCranes)
 	READ_VALUE(craneData.militaryCollected)
-	for(size_t c = 0; c < craneData.numCranes; ++c) {
-		Block6Crane &crane = craneData.cranes[c];
+	for (size_t c = 0; c < craneData.numCranes; ++c) {
+		Block6Crane& crane = craneData.cranes[c];
 		READ_VALUE(crane)
 	}
 
 #if RW_DEBUG
 	std::cout << "Cranes: " << craneData.numCranes << std::endl;
-	for(size_t c = 0; c < craneData.numCranes; ++c) {
-		Block6Crane &crane = craneData.cranes[c];
-		std::cout << "pickup " << crane.x1Pickup << " " << crane.y1Pickup << " " << crane.x2Pickup << " " << crane.y2Pickup << std::endl;
-		std::cout << "vehicles collected " << uint16_t(crane.vehiclesCollected) << std::endl;
+	for (size_t c = 0; c < craneData.numCranes; ++c) {
+		Block6Crane& crane = craneData.cranes[c];
+		std::cout << "pickup " << crane.x1Pickup << " " << crane.y1Pickup << " "
+		          << crane.x2Pickup << " " << crane.y2Pickup << std::endl;
+		std::cout << "vehicles collected " << uint16_t(crane.vehiclesCollected)
+		          << std::endl;
 	}
 #endif
 
@@ -777,10 +801,12 @@ bool SaveGame::loadGame(GameState& state, const std::string& file)
 	READ_VALUE(pickupData);
 
 #if RW_DEBUG
-	for(int c = 0; c < 336; ++c) {
-		Block7Pickup &p = pickupData.pickups[c];
-		if (p.type == 0) continue;
-		std::cout << " " << uint16_t(p.type) << " " << p.position.x << " " << p.position.y << " " << p.position.z << std::endl;
+	for (int c = 0; c < 336; ++c) {
+		Block7Pickup& p = pickupData.pickups[c];
+		if (p.type == 0)
+			continue;
+		std::cout << " " << uint16_t(p.type) << " " << p.position.x << " "
+		          << p.position.y << " " << p.position.z << std::endl;
 	}
 #endif
 
@@ -794,15 +820,17 @@ bool SaveGame::loadGame(GameState& state, const std::string& file)
 	READ_VALUE(phoneData);
 	std::vector<Block8Phone> phones(phoneData.numPhones);
 	for (size_t p = 0; p < phoneData.numPhones; ++p) {
-		Block8Phone &phone = phones[p];
+		Block8Phone& phone = phones[p];
 		READ_VALUE(phone)
 	}
 
 #if RW_DEBUG
 	std::cout << "Phones: " << phoneData.numPhones << std::endl;
 	for (size_t p = 0; p < phoneData.numPhones; ++p) {
-		Block8Phone &phone = phones[p];
-		std::cout << " " << uint16_t(phone.state) << " " << phone.position.x << " " << phone.position.y << " " << phone.position.z << std::endl;
+		Block8Phone& phone = phones[p];
+		std::cout << " " << uint16_t(phone.state) << " " << phone.position.x
+		          << " " << phone.position.y << " " << phone.position.z
+		          << std::endl;
 	}
 #endif
 
@@ -818,14 +846,17 @@ bool SaveGame::loadGame(GameState& state, const std::string& file)
 	READ_VALUE(restartData);
 
 #if RW_DEBUG
-	std::cout << "Hospitals: " << restartData.numHospitals << " police: " << restartData.numPolice << std::endl;
-	for(int s = 0; s < restartData.numHospitals; ++s) {
-		Block9Restart &p = restartData.hospitalRestarts[s];
-		std::cout << " H " << p.position.x << " " << p.position.y << " " << p.position.z << std::endl;
+	std::cout << "Hospitals: " << restartData.numHospitals
+	          << " police: " << restartData.numPolice << std::endl;
+	for (int s = 0; s < restartData.numHospitals; ++s) {
+		Block9Restart& p = restartData.hospitalRestarts[s];
+		std::cout << " H " << p.position.x << " " << p.position.y << " "
+		          << p.position.z << std::endl;
 	}
-	for(int s = 0; s < restartData.numPolice; ++s) {
-		Block9Restart &p = restartData.policeRestarts[s];
-		std::cout << " P " << p.position.x << " " << p.position.y << " " << p.position.z << std::endl;
+	for (int s = 0; s < restartData.numPolice; ++s) {
+		Block9Restart& p = restartData.policeRestarts[s];
+		std::cout << " P " << p.position.x << " " << p.position.y << " "
+		          << p.position.z << std::endl;
 	}
 #endif
 
@@ -841,10 +872,12 @@ bool SaveGame::loadGame(GameState& state, const std::string& file)
 	READ_VALUE(radarData);
 
 #if RW_DEBUG
-	for(int b = 0; b < 32; ++b) {
-		Block10Blip &p = radarData.blips[b];
-		if (p.type == 0) continue;
-		std::cout << " " << p.position.x << " " << p.position.y << " " << p.position.z << std::endl;
+	for (int b = 0; b < 32; ++b) {
+		Block10Blip& p = radarData.blips[b];
+		if (p.type == 0)
+			continue;
+		std::cout << " " << p.position.x << " " << p.position.y << " "
+		          << p.position.z << std::endl;
 	}
 #endif
 
@@ -862,7 +895,7 @@ bool SaveGame::loadGame(GameState& state, const std::string& file)
 	READ_VALUE(zoneData.findIndex);
 	READ_VALUE(zoneData.align);
 	for (int z = 0; z < 50; z++) {
-		Block11Zone &zone = zoneData.navZones[z];
+		Block11Zone& zone = zoneData.navZones[z];
 		READ_VALUE(zone.name);
 		READ_VALUE(zone.coordA);
 		READ_VALUE(zone.coordB);
@@ -875,14 +908,14 @@ bool SaveGame::loadGame(GameState& state, const std::string& file)
 		READ_VALUE(zone.siblingZone);
 	}
 	for (int z = 0; z < 100; z++) {
-		Block11ZoneInfo &info = zoneData.dayNightInfo[z];
+		Block11ZoneInfo& info = zoneData.dayNightInfo[z];
 		READ_VALUE(info.density)
 		READ_VALUE(info.unknown1)
 	}
 	READ_VALUE(zoneData.numNavZones);
 	READ_VALUE(zoneData.numZoneInfos);
 	for (int z = 0; z < 25; z++) {
-		Block11Zone &zone = zoneData.mapZones[z];
+		Block11Zone& zone = zoneData.mapZones[z];
 		READ_VALUE(zone.name);
 		READ_VALUE(zone.coordA);
 		READ_VALUE(zone.coordB);
@@ -901,14 +934,15 @@ bool SaveGame::loadGame(GameState& state, const std::string& file)
 	READ_VALUE(zoneData.numAudioZones);
 
 #if RW_DEBUG
-	std::cout << "zones: " << zoneData.numNavZones << " " << zoneData.numZoneInfos << " "
-			  << zoneData.numMapZones << " " << zoneData.numAudioZones << std::endl;
-	for(int z = 0; z < zoneData.numNavZones; ++z) {
-		Block11Zone &zone = zoneData.navZones[z];
+	std::cout << "zones: " << zoneData.numNavZones << " "
+	          << zoneData.numZoneInfos << " " << zoneData.numMapZones << " "
+	          << zoneData.numAudioZones << std::endl;
+	for (int z = 0; z < zoneData.numNavZones; ++z) {
+		Block11Zone& zone = zoneData.navZones[z];
 		std::cout << " " << zone.name << std::endl;
 	}
-	for(int z = 0; z < zoneData.numMapZones; ++z) {
-		Block11Zone &zone = zoneData.mapZones[z];
+	for (int z = 0; z < zoneData.numMapZones; ++z) {
+		Block11Zone& zone = zoneData.mapZones[z];
 		std::cout << " " << zone.name << std::endl;
 	}
 #endif
@@ -925,9 +959,10 @@ bool SaveGame::loadGame(GameState& state, const std::string& file)
 	READ_VALUE(gangData);
 
 #if RW_DEBUG
-	for(int g = 0; g  < 9; ++g) {
-		Block12Gang &p = gangData.gangs[g];
-		std::cout << " " << p.carModelId  << " " << p.weaponPrimary << " " << p.weaponSecondary << std::endl;
+	for (int g = 0; g < 9; ++g) {
+		Block12Gang& p = gangData.gangs[g];
+		std::cout << " " << p.carModelId << " " << p.weaponPrimary << " "
+		          << p.weaponSecondary << std::endl;
 	}
 #endif
 
@@ -942,16 +977,19 @@ bool SaveGame::loadGame(GameState& state, const std::string& file)
 	Block13Data carGeneratorData;
 	READ_VALUE(carGeneratorData);
 
-	std::vector<Block13CarGenerator> carGenerators(carGeneratorData.generatorCount);
-	for(size_t g = 0; g < carGeneratorData.generatorCount; ++g) {
+	std::vector<Block13CarGenerator> carGenerators(
+	    carGeneratorData.generatorCount);
+	for (size_t g = 0; g < carGeneratorData.generatorCount; ++g) {
 		READ_VALUE(carGenerators[g])
 	}
 
 #if RW_DEBUG
-	std::cout << "Car generators: " << carGeneratorData.generatorCount << std::endl;
-	for(size_t g = 0; g < carGeneratorData.generatorCount; ++g) {
-		Block13CarGenerator &gen = carGenerators[g];
-		std::cout << " " << gen.modelId  << " " << gen.position.x << " "<< gen.position.y << " " << gen.position.z << std::endl;
+	std::cout << "Car generators: " << carGeneratorData.generatorCount
+	          << std::endl;
+	for (size_t g = 0; g < carGeneratorData.generatorCount; ++g) {
+		Block13CarGenerator& gen = carGenerators[g];
+		std::cout << " " << gen.modelId << " " << gen.position.x << " "
+		          << gen.position.y << " " << gen.position.z << std::endl;
 	}
 #endif
 
@@ -964,7 +1002,7 @@ bool SaveGame::loadGame(GameState& state, const std::string& file)
 	BlockDword particleCount;
 	READ_VALUE(particleCount);
 	std::vector<Block14Particle> particles(particleCount);
-	for(size_t p = 0; p < particleCount; ++p) {
+	for (size_t p = 0; p < particleCount; ++p) {
 		READ_VALUE(particles[p])
 	}
 
@@ -984,7 +1022,7 @@ bool SaveGame::loadGame(GameState& state, const std::string& file)
 	READ_VALUE(audioCount)
 
 	std::vector<Block15AudioObject> audioObjects(audioCount);
-	for(size_t a = 0; a < audioCount; ++a) {
+	for (size_t a = 0; a < audioCount; ++a) {
 		READ_VALUE(audioObjects[a])
 	}
 
@@ -1012,7 +1050,8 @@ bool SaveGame::loadGame(GameState& state, const std::string& file)
 	READ_VALUE(state.playerInfo.unknown5)
 
 #if RW_DEBUG
-	std::cout << "Player money: " << state.playerInfo.money  << " (" << state.playerInfo.displayedMoney << ")" << std::endl;
+	std::cout << "Player money: " << state.playerInfo.money << " ("
+	          << state.playerInfo.displayedMoney << ")" << std::endl;
 #endif
 
 	// Block 17
@@ -1075,7 +1114,8 @@ bool SaveGame::loadGame(GameState& state, const std::string& file)
 
 #if RW_DEBUG
 	std::cout << "Player kills: " << state.gameStats.playerKills << std::endl;
-	std::cout << "longest flight " << state.gameStats.longestDodoFlight << std::endl;
+	std::cout << "longest flight " << state.gameStats.longestDodoFlight
+	          << std::endl;
 #endif
 
 	// Block 18
@@ -1087,15 +1127,14 @@ bool SaveGame::loadGame(GameState& state, const std::string& file)
 	Block18Data streamingData;
 	READ_VALUE(streamingData);
 
-#if RW_DEBUG && 0 // No idea what the data in the section means yet
-	static const size_t streamSize = sqrt(200*8);
+#if RW_DEBUG && 0  // No idea what the data in the section means yet
+	static const size_t streamSize = sqrt(200 * 8);
 	for (int x = 0; x < streamSize; ++x) {
 		for (int y = 0; y < streamSize; ++y) {
 			size_t coord = (y * streamSize) + x;
-			if (streamingData.unknown1[(coord/8)] & (0x1 << (coord%8))) {
+			if (streamingData.unknown1[(coord / 8)] & (0x1 << (coord % 8))) {
 				std::cout << "\u2588";
-			}
-			else {
+			} else {
 				std::cout << " ";
 			}
 		}
@@ -1114,10 +1153,12 @@ bool SaveGame::loadGame(GameState& state, const std::string& file)
 	Block19Data pedTypeData;
 	READ_VALUE(pedTypeData);
 
-#if RW_DEBUG && 0 // Nor this
+#if RW_DEBUG && 0  // Nor this
 	for (int i = 0; i < 23; ++i) {
-		if (pedTypeData.types[i].unknown1 & (0x1 << i) != 0) continue;
-		std::cout << pedTypeData.types[i].unknown1 << " " << pedTypeData.types[i].unknown7 << std::endl;
+		if (pedTypeData.types[i].unknown1 & (0x1 << i) != 0)
+			continue;
+		std::cout << pedTypeData.types[i].unknown1 << " "
+		          << pedTypeData.types[i].unknown7 << std::endl;
 	}
 #endif
 
@@ -1126,28 +1167,29 @@ bool SaveGame::loadGame(GameState& state, const std::string& file)
 	// We keep track of the game time as a float for now
 	state.gameTime = state.basic.timeMS / 1000.f;
 
-	state.scriptOnMissionFlag = (unsigned int*)state.script->getGlobals() + (size_t)scriptData.onMissionOffset;
+	state.scriptOnMissionFlag = (unsigned int*)state.script->getGlobals() +
+	                            (size_t)scriptData.onMissionOffset;
 
 	auto& threads = state.script->getThreads();
-	for(size_t s = 0; s < numScripts; ++s) {
+	for (size_t s = 0; s < numScripts; ++s) {
 		state.script->startThread(scripts[s].programCounter);
 		SCMThread& thread = threads.back();
 		// thread.baseAddress // ??
-        strncpy(thread.name, scripts[s].name, sizeof(SCMThread::name)-1);
+		strncpy(thread.name, scripts[s].name, sizeof(SCMThread::name) - 1);
 		thread.conditionResult = scripts[s].ifFlag;
 		thread.conditionCount = scripts[s].ifNumber;
 		thread.stackDepth = scripts[s].stackCounter;
-		for(int i = 0; i < SCM_STACK_DEPTH; ++i) {
+		for (int i = 0; i < SCM_STACK_DEPTH; ++i) {
 			thread.calls[i] = scripts[s].stack[i];
 		}
-		 /* TODO not hardcode +33 ms */
+		/* TODO not hardcode +33 ms */
 		thread.wakeCounter = scripts[s].wakeTimer - state.basic.lastTick + 33;
-		for(size_t i = 0; i < sizeof(Block0RunningScript::variables); ++i) {
+		for (size_t i = 0; i < sizeof(Block0RunningScript::variables); ++i) {
 			thread.locals[i] = scripts[s].variables[i];
 		}
 	}
 
-	if( playerCount > 0 ) {
+	if (playerCount > 0) {
 		auto& ply = players[0];
 		std::cout << ply.reference << std::endl;
 		auto player = state.world->createPlayer(players[0].info.position);
@@ -1156,7 +1198,7 @@ bool SaveGame::loadGame(GameState& state, const std::string& file)
 		cs.armour = players[0].info.armour;
 		state.playerObject = player->getGameObjectID();
 		state.maxWantedLevel = players[0].maxWantedLevel;
-		for(int w = 0; w < 13; ++w) {
+		for (int w = 0; w < 13; ++w) {
 			auto& wep = ply.info.weapons[w];
 			cs.weapons[w].weaponId = wep.weaponId;
 			cs.weapons[w].bulletsClip = wep.inClip;
@@ -1166,25 +1208,22 @@ bool SaveGame::loadGame(GameState& state, const std::string& file)
 
 	// TODO restore garage data
 	// http://gtaforums.com/topic/758692-gta-iii-save-file-documentation/
-	for(size_t g = 0; g < garageData.garageCount; ++g) {
+	for (size_t g = 0; g < garageData.garageCount; ++g) {
 		auto& garage = garages[g];
-		state.garages.push_back({
-			glm::vec3(garage.x1, garage.y1, garage.z1),
-			glm::vec3(garage.x2, garage.y2, garage.z2),
-			garage.type
-		});
+		state.garages.push_back({glm::vec3(garage.x1, garage.y1, garage.z1),
+		                         glm::vec3(garage.x2, garage.y2, garage.z2),
+		                         garage.type});
 	}
-	for(int c = 0; c < 18; ++c) {
-		if(garageData.cars[c].modelId == 0) continue;
+	for (int c = 0; c < 18; ++c) {
+		if (garageData.cars[c].modelId == 0)
+			continue;
 		auto& car = garageData.cars[c];
 		glm::quat rotation(
-					glm::mat3(
-						glm::cross(car.rotation, glm::vec3(0.f, 0.f, 1.f)),
-						car.rotation,
-						glm::vec3(0.f, 0.f, 1.f)
-						));
-		
-		VehicleObject* vehicle = state.world->createVehicle(car.modelId, car.position, rotation);
+		    glm::mat3(glm::cross(car.rotation, glm::vec3(0.f, 0.f, 1.f)),
+		              car.rotation, glm::vec3(0.f, 0.f, 1.f)));
+
+		VehicleObject* vehicle =
+		    state.world->createVehicle(car.modelId, car.position, rotation);
 		vehicle->setPrimaryColour(car.colorFG);
 		vehicle->setSecondaryColour(car.colorBG);
 	}
@@ -1195,34 +1234,36 @@ bool SaveGame::loadGame(GameState& state, const std::string& file)
 	state.importExportUnused = garageData.bfImportExportUnused;
 
 	std::fclose(loadFile);
-	
+
 	return true;
 }
 
 #include <dirent.h>
-bool SaveGame::getSaveInfo(const std::string& file, BasicState *basicState)
+bool SaveGame::getSaveInfo(const std::string& file, BasicState* basicState)
 {
 	std::FILE* loadFile = std::fopen(file.c_str(), "r");
 
 	SaveGameInfo info;
 	info.savePath = file;
-	
+
 	// BLOCK 0
 	BlockDword blockSize;
-	if( fread(&blockSize, sizeof(BlockDword), 1, loadFile) == 0 ) {
+	if (fread(&blockSize, sizeof(BlockDword), 1, loadFile) == 0) {
 		return false;
 	}
-	
+
 	// Read block 0 into state
-	if( fread(basicState, sizeof(BasicState), 1, loadFile) == 0 ) {
+	if (fread(basicState, sizeof(BasicState), 1, loadFile) == 0) {
 		return false;
 	}
-	
+
 	std::fclose(loadFile);
 
 	size_t bytes = 0;
-	for(;; bytes++ ) {
-		if(basicState->saveName[bytes-1] == 0 && basicState->saveName[bytes] == 0) break;
+	for (;; bytes++) {
+		if (basicState->saveName[bytes - 1] == 0 &&
+		    basicState->saveName[bytes] == 0)
+			break;
 	}
 	size_t outSize = 24;
 	char outBuff[48];
@@ -1237,11 +1278,11 @@ bool SaveGame::getSaveInfo(const std::string& file, BasicState *basicState)
 	return true;
 }
 
-std::vector< SaveGameInfo > SaveGame::getAllSaveGameInfo()
+std::vector<SaveGameInfo> SaveGame::getAllSaveGameInfo()
 {
 	// TODO consider windows
 	auto homedir = getenv("HOME");
-	if( homedir == nullptr ) {
+	if (homedir == nullptr) {
 		std::cerr << "Unable to determine home directory" << std::endl;
 		return {};
 	}
@@ -1253,22 +1294,21 @@ std::vector< SaveGameInfo > SaveGame::getAllSaveGameInfo()
 	DIR* dp = opendir(gamePath.c_str());
 	dirent* ep;
 	std::string realName;
-	if ( dp == NULL ) {
+	if (dp == NULL) {
 		return {};
 	}
 	std::vector<SaveGameInfo> infos;
-	while( (ep = readdir(dp)) )
-	{
-		if ( ep->d_type == DT_REG ) {
+	while ((ep = readdir(dp))) {
+		if (ep->d_type == DT_REG) {
 			realName = ep->d_name;
-			if(realName.find(".b") != realName.npos) {
-				std::string path = gamePath+"/"+realName;
+			if (realName.find(".b") != realName.npos) {
+				std::string path = gamePath + "/" + realName;
 				infos.emplace_back(SaveGameInfo{path, false, BasicState()});
-				infos.back().valid = getSaveInfo(infos.back().savePath, &infos.back().basicState);
+				infos.back().valid = getSaveInfo(infos.back().savePath,
+				                                 &infos.back().basicState);
 			}
 		}
 	}
 	closedir(dp);
 	return infos;
 }
-

@@ -3,32 +3,35 @@
 void SCMFile::loadFile(char *data, unsigned int size)
 {
 	_data = new SCMByte[size];
-	std::copy(data, data+size, _data);
+	std::copy(data, data + size, _data);
 
 	// Bytes required to hop over a jump opcode.
-	const unsigned int jumpOpSize = 2u+1u+4u;
-	const unsigned int jumpParamSize = 2u+1u;
+	const unsigned int jumpOpSize = 2u + 1u + 4u;
+	const unsigned int jumpParamSize = 2u + 1u;
 
 	_target = static_cast<SCMTarget>(_data[jumpOpSize]);
-	globalSectionOffset = jumpOpSize+1u;
+	globalSectionOffset = jumpOpSize + 1u;
 	modelSectionOffset = read<uint32>(jumpParamSize) + jumpOpSize + 1u;
-	missionSectionOffset = read<uint32>(modelSectionOffset-jumpOpSize-1u+jumpParamSize) + jumpOpSize + 1u;
-	codeSectionOffset = read<uint32>(missionSectionOffset-jumpOpSize-1u+jumpParamSize);
+	missionSectionOffset =
+	    read<uint32>(modelSectionOffset - jumpOpSize - 1u + jumpParamSize) +
+	    jumpOpSize + 1u;
+	codeSectionOffset =
+	    read<uint32>(missionSectionOffset - jumpOpSize - 1u + jumpParamSize);
 
 	unsigned int model_count = read<uint32>(modelSectionOffset);
 	models.reserve(model_count);
 
 	int i = modelSectionOffset + sizeof(uint32);
-	for(unsigned int m = 0; m < model_count; ++m) {
+	for (unsigned int m = 0; m < model_count; ++m) {
 		char model_name[24];
-		for(size_t c = 0; c < 24; ++c) {
+		for (size_t c = 0; c < 24; ++c) {
 			model_name[c] = read<char>(i++);
 		}
 		models.push_back(model_name);
 	}
 
 	i = missionSectionOffset;
-	mainSize           = read<uint32>(i);
+	mainSize = read<uint32>(i);
 	i += sizeof(uint32);
 	missionLargestSize = read<uint32>(i);
 	i += sizeof(uint32);
@@ -36,7 +39,7 @@ void SCMFile::loadFile(char *data, unsigned int size)
 	missionOffsets.reserve(missionCount);
 	i += sizeof(uint32);
 
-	for(unsigned int m = 0; m <	missionCount; ++m) {
+	for (unsigned int m = 0; m < missionCount; ++m) {
 		missionOffsets.push_back(read<uint32>(i));
 		i += sizeof(uint32);
 	}

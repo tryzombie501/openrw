@@ -2,10 +2,10 @@
 
 QVariant AnimationListModel::data(const QModelIndex& index, int role) const
 {
-	if(role == Qt::DisplayRole) {
-		if(index.row() >= 0 && (unsigned) index.row() < animations.size()) {
+	if (role == Qt::DisplayRole) {
+		if (index.row() >= 0 && (unsigned)index.row() < animations.size()) {
 			auto& f = animations.at(index.row());
-			if(index.column() == 0) {
+			if (index.column() == 0) {
 				return QString(f.first.c_str());
 			}
 		}
@@ -13,10 +13,12 @@ QVariant AnimationListModel::data(const QModelIndex& index, int role) const
 	return QVariant::Invalid;
 }
 
-QVariant AnimationListModel::headerData(int section, Qt::Orientation orientation, int role) const
+QVariant AnimationListModel::headerData(int section,
+                                        Qt::Orientation orientation,
+                                        int role) const
 {
-	if(role == Qt::DisplayRole && orientation == Qt::Horizontal) {
-		if(section == 0) {
+	if (role == Qt::DisplayRole && orientation == Qt::Horizontal) {
+		if (section == 0) {
 			return "Name";
 		}
 	}
@@ -32,4 +34,3 @@ int AnimationListModel::columnCount(const QModelIndex& parent) const
 {
 	return 1;
 }
-

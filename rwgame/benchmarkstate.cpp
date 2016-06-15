@@ -3,10 +3,7 @@
 #include <engine/GameState.hpp>
 
 BenchmarkState::BenchmarkState(RWGame* game, const std::string& benchfile)
-	: State(game)
-	, benchfile(benchfile)
-	, benchmarkTime(0.f)
-	, frameCounter(0)
+    : State(game), benchfile(benchfile), benchmarkTime(0.f), frameCounter(0)
 {
 }
 
@@ -17,7 +14,7 @@ void BenchmarkState::enter()
 	unsigned int clockHour;
 	unsigned int clockMinute;
 	benchstream >> clockHour;
-	benchstream.seekg(1,std::ios_base::cur);
+	benchstream.seekg(1, std::ios_base::cur);
 	benchstream >> clockMinute;
 
 	game->getWorld()->state->basic.gameHour = clockHour;
@@ -25,25 +22,32 @@ void BenchmarkState::enter()
 
 	float time = 0.f;
 	glm::vec3 tmpPos;
-	while (benchstream)
-	{
+	while (benchstream) {
 		TrackPoint point;
 		benchstream >> point.time;
-		if (!benchstream) break;
+		if (!benchstream)
+			break;
 		benchstream >> point.position.x;
-		if (!benchstream) break;
+		if (!benchstream)
+			break;
 		benchstream >> point.position.y;
-		if (!benchstream) break;
+		if (!benchstream)
+			break;
 		benchstream >> point.position.z;
-		if (!benchstream) break;
+		if (!benchstream)
+			break;
 		benchstream >> point.angle.x;
-		if (!benchstream) break;
+		if (!benchstream)
+			break;
 		benchstream >> point.angle.y;
-		if (!benchstream) break;
+		if (!benchstream)
+			break;
 		benchstream >> point.angle.z;
-		if (!benchstream) break;
+		if (!benchstream)
+			break;
 		benchstream >> point.angle.w;
-		if (!benchstream) break;
+		if (!benchstream)
+			break;
 		if (track.size() == 0) {
 			tmpPos = point.position;
 		}
@@ -61,23 +65,21 @@ void BenchmarkState::enter()
 void BenchmarkState::exit()
 {
 	std::cout << "Results =============\n"
-			  << "Benchmark: " << benchfile << "\n"
-			  << "Frames: " << frameCounter << "\n"
-			  << "Duration: " << duration << " seconds\n"
-			  << "Avg frametime: " << std::setprecision(3) << (duration/frameCounter)
-			  << " (" << (frameCounter/duration) << " fps)" << std::endl;
+	          << "Benchmark: " << benchfile << "\n"
+	          << "Frames: " << frameCounter << "\n"
+	          << "Duration: " << duration << " seconds\n"
+	          << "Avg frametime: " << std::setprecision(3)
+	          << (duration / frameCounter) << " (" << (frameCounter / duration)
+	          << " fps)" << std::endl;
 }
 
 void BenchmarkState::tick(float dt)
 {
-	if (track.size() > 0)
-	{
+	if (track.size() > 0) {
 		TrackPoint& a = track.front();
 		TrackPoint& b = track.back();
-		for (TrackPoint& p : track)
-		{
-			if (benchmarkTime < p.time)
-			{
+		for (TrackPoint& p : track) {
+			if (benchmarkTime < p.time) {
 				b = p;
 				break;
 			}
@@ -86,8 +88,7 @@ void BenchmarkState::tick(float dt)
 		if (benchmarkTime > duration) {
 			StateManager::get().exit();
 		}
-		if (b.time != a.time)
-		{
+		if (b.time != a.time) {
 			float alpha = (benchmarkTime - a.time) / (b.time - a.time);
 			trackCam.position = glm::mix(a.position, b.position, alpha);
 			trackCam.rotation = glm::slerp(a.angle, b.angle, alpha);
@@ -102,12 +103,6 @@ void BenchmarkState::draw(GameRenderer* r)
 	State::draw(r);
 }
 
-void BenchmarkState::handleEvent(const sf::Event &e)
-{
-	State::handleEvent(e);
-}
+void BenchmarkState::handleEvent(const sf::Event& e) { State::handleEvent(e); }
 
-const ViewCamera &BenchmarkState::getCamera()
-{
-	return trackCam;
-}
+const ViewCamera& BenchmarkState::getCamera() { return trackCam; }

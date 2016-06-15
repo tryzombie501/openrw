@@ -4,8 +4,9 @@
 #include <QDebug>
 #include <QMenu>
 
-ObjectViewer::ObjectViewer(ViewerWidget* viewer, QWidget* parent, Qt::WindowFlags f)
-: ViewerInterface(parent, f)
+ObjectViewer::ObjectViewer(ViewerWidget* viewer, QWidget* parent,
+                           Qt::WindowFlags f)
+    : ViewerInterface(parent, f)
 {
 	mainLayout = new QHBoxLayout;
 
@@ -16,12 +17,13 @@ ObjectViewer::ObjectViewer(ViewerWidget* viewer, QWidget* parent, Qt::WindowFlag
 	auto viewModelAction = new QAction("View Model", objectMenu);
 	objectMenu->addAction(viewModelAction);
 	connect(viewModelAction, SIGNAL(triggered()), this, SLOT(menuViewModel()));
-	connect(objectList, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(onCustomContextMenu(QPoint)));
+	connect(objectList, SIGNAL(customContextMenuRequested(QPoint)), this,
+	        SLOT(onCustomContextMenu(QPoint)));
 
 	mainLayout->addWidget(objectList);
 
 	previewWidget = viewer;
-	previewWidget->setMinimumSize(250,250);
+	previewWidget->setMinimumSize(250, 250);
 
 	infoLayout = new QGridLayout;
 
@@ -44,7 +46,7 @@ ObjectViewer::ObjectViewer(ViewerWidget* viewer, QWidget* parent, Qt::WindowFlag
 
 void ObjectViewer::setViewerWidget(ViewerWidget* widget)
 {
-	//widgetLayout->removeWidget(previewWidget);
+	// widgetLayout->removeWidget(previewWidget);
 	previewWidget = widget;
 	infoLayout->addWidget(previewWidget, 0, 0, 1, 2);
 }
@@ -52,50 +54,43 @@ void ObjectViewer::setViewerWidget(ViewerWidget* widget)
 void ObjectViewer::worldChanged()
 {
 	// Loade all of the IDEs.
-	for(std::map<std::string, std::string>::iterator it = world()->data->ideLocations.begin();
-		it != world()->data->ideLocations.end();
-		++it) {
+	for (std::map<std::string, std::string>::iterator it =
+	         world()->data->ideLocations.begin();
+	     it != world()->data->ideLocations.end(); ++it) {
 		world()->data->loadObjects(it->second);
 	}
 
-	if( objectList->model() )
-	{
+	if (objectList->model()) {
 		delete objectList->model();
 	}
 
 	objectList->setModel(new ObjectListModel(world()->data, objectList));
-	connect(objectList->selectionModel(), SIGNAL(currentChanged(QModelIndex,QModelIndex)), this, SLOT(showItem(QModelIndex)));
+	connect(objectList->selectionModel(),
+	        SIGNAL(currentChanged(QModelIndex, QModelIndex)), this,
+	        SLOT(showItem(QModelIndex)));
 }
 
-static std::map<ObjectInformation::ObjectClass, QString> gDataType =
-{
-	{ ObjectInformation::_class("OBJS"), "Object" },
-	{ ObjectInformation::_class("CARS"), "Vehicle" },
-	{ ObjectInformation::_class("PEDS"), "Pedestrian" },
-	{ ObjectInformation::_class("HIER"), "Cutscene" }
-};
+static std::map<ObjectInformation::ObjectClass, QString> gDataType = {
+    {ObjectInformation::_class("OBJS"), "Object"},
+    {ObjectInformation::_class("CARS"), "Vehicle"},
+    {ObjectInformation::_class("PEDS"), "Pedestrian"},
+    {ObjectInformation::_class("HIER"), "Cutscene"}};
 
 void ObjectViewer::showItem(qint16 item)
 {
 	auto def = world()->data->objectTypes[item];
 
-	if( def )
-	{
+	if (def) {
 		previewID->setText(QString::number(def->ID));
 		previewClass->setText(gDataType[def->class_type]);
 
-		if(def->class_type == ObjectData::class_id)
-		{
+		if (def->class_type == ObjectData::class_id) {
 			auto v = std::static_pointer_cast<ObjectData>(def);
 			previewModel->setText(QString::fromStdString(v->modelName));
-		}
-		else if(def->class_type == VehicleData::class_id)
-		{
+		} else if (def->class_type == VehicleData::class_id) {
 			auto v = std::static_pointer_cast<VehicleData>(def);
 			previewModel->setText(QString::fromStdString(v->modelName));
-		}
-		else if(def->class_type == CharacterData::class_id)
-		{
+		} else if (def->class_type == CharacterData::class_id) {
 			auto v = std::static_pointer_cast<CharacterData>(def);
 			previewModel->setText(QString::fromStdString(v->modelName));
 		}
@@ -104,27 +99,20 @@ void ObjectViewer::showItem(qint16 item)
 	}
 }
 
-void ObjectViewer::showItem(QModelIndex model)
-{
-	showItem(model.internalId());
-}
+void ObjectViewer::showItem(QModelIndex model) { showItem(model.internalId()); }
 
 void ObjectViewer::onCustomContextMenu(const QPoint& p)
 {
 	contextMenuIndex = objectList->indexAt(p);
-    if ( contextMenuIndex.isValid() )
-	{
-        objectMenu->exec(objectList->mapToGlobal(p));
-    }    
+	if (contextMenuIndex.isValid()) {
+		objectMenu->exec(objectList->mapToGlobal(p));
+	}
 }
 
 void ObjectViewer::menuViewModel()
 {
-	if( contextMenuIndex.isValid() )
-	{
+	if (contextMenuIndex.isValid()) {
 		auto id = contextMenuIndex.internalId();
 		showObjectModel(id);
 	}
 }
-
-

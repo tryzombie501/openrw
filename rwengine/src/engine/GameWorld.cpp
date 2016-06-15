@@ -25,14 +25,16 @@
 
 class WorldCollisionDispatcher : public btCollisionDispatcher
 {
-public:
-
+   public:
 	WorldCollisionDispatcher(btCollisionConfiguration* collisionConfiguration)
-		: btCollisionDispatcher(collisionConfiguration)
-	{}
+	    : btCollisionDispatcher(collisionConfiguration)
+	{
+	}
 
-	bool needsResponse(const btCollisionObject *obA, const btCollisionObject *obB) {
-		if( !( obA->getUserPointer() && obB->getUserPointer() ) ) {
+	bool needsResponse(const btCollisionObject* obA,
+	                   const btCollisionObject* obB)
+	{
+		if (!(obA->getUserPointer() && obB->getUserPointer())) {
 			return btCollisionDispatcher::needsResponse(obA, obB);
 		}
 
@@ -42,33 +44,32 @@ public:
 		bool valA = a && a->type() == GameObject::Instance;
 		bool valB = b && b->type() == GameObject::Instance;
 
-		if( ! (valA && valB) &&	(valB || valA) ) {
-
+		if (!(valA && valB) && (valB || valA)) {
 			// Figure out which is the dynamic instance.
 			InstanceObject* dynInst = nullptr;
 			const btRigidBody* instBody = nullptr, * otherBody = nullptr;
 
-			if( valA ) {
+			if (valA) {
 				dynInst = static_cast<InstanceObject*>(a);
 				instBody = static_cast<const btRigidBody*>(obA);
 				otherBody = static_cast<const btRigidBody*>(obB);
-			}
-			else {
+			} else {
 				dynInst = static_cast<InstanceObject*>(b);
 				instBody = static_cast<const btRigidBody*>(obB);
 				otherBody = static_cast<const btRigidBody*>(obA);
 			}
 
-			if( dynInst->dynamics == nullptr || ! instBody->isStaticObject() ) {
+			if (dynInst->dynamics == nullptr || !instBody->isStaticObject()) {
 				return btCollisionDispatcher::needsResponse(obA, obB);
 			}
 
 			// Attempt to determine relative velocity.
-			auto dV  = (otherBody->getLinearVelocity());
+			auto dV = (otherBody->getLinearVelocity());
 			auto impulse = dV.length();
 
 			// Ignore collision if the object is about to be uprooted.
-			if(	dynInst->dynamics->uprootForce <= impulse / (otherBody->getInvMass()) ) {
+			if (dynInst->dynamics->uprootForce <=
+			    impulse / (otherBody->getInvMass())) {
 				return false;
 			}
 		}
@@ -77,34 +78,31 @@ public:
 };
 
 GameWorld::GameWorld(Logger* log, WorkContext* work, GameData* dat)
-	: logger(log), data(dat), randomEngine(rand()),
-	  _work( work ),
-	  paused(false)
+    : logger(log), data(dat), randomEngine(rand()), _work(work), paused(false)
 {
 	data->engine = this;
-	
+
 	collisionConfig = new btDefaultCollisionConfiguration;
 	collisionDispatcher = new WorldCollisionDispatcher(collisionConfig);
 	broadphase = new btDbvtBroadphase();
 	solver = new btSequentialImpulseConstraintSolver;
-	dynamicsWorld = new btDiscreteDynamicsWorld(collisionDispatcher, broadphase, solver, collisionConfig);
+	dynamicsWorld = new btDiscreteDynamicsWorld(collisionDispatcher, broadphase,
+	                                            solver, collisionConfig);
 	dynamicsWorld->setGravity(btVector3(0.f, 0.f, -9.81f));
-	broadphase->getOverlappingPairCache()->setInternalGhostPairCallback(new btGhostPairCallback());
+	broadphase->getOverlappingPairCache()->setInternalGhostPairCallback(
+	    new btGhostPairCallback());
 	gContactProcessedCallback = ContactProcessedCallback;
 	dynamicsWorld->setInternalTickCallback(PhysicsTickCallback, this);
 
 	// Populate inventory items
-	for( auto& w : data->weaponData ) {
-		inventoryItems.push_back(
-					new WeaponItem(
-						inventoryItems.size(),
-						w));
+	for (auto& w : data->weaponData) {
+		inventoryItems.push_back(new WeaponItem(inventoryItems.size(), w));
 	}
 }
 
 GameWorld::~GameWorld()
 {
-	for(auto& p : allObjects) {
+	for (auto& p : allObjects) {
 		delete p;
 	}
 
@@ -120,60 +118,63 @@ GameWorld::~GameWorld()
 bool GameWorld::placeItems(const std::string& name)
 {
 	std::string path = name;
-	
+
 	LoaderIPL ipll;
 
-	if(ipll.load(path))
-	{
+	if (ipll.load(path)) {
 		// Find the object.
-		for( size_t i = 0; i < ipll.m_instances.size(); ++i) {
+		for (size_t i = 0; i < ipll.m_instances.size(); ++i) {
 			std::shared_ptr<InstanceData> inst = ipll.m_instances[i];
-			if(! createInstance(inst->id, inst->pos, inst->rot)) {
-				logger->error("World", "No object data for instance " + std::to_string(inst->id) + " in " + path);
+			if (!createInstance(inst->id, inst->pos, inst->rot)) {
+				logger->error("World", "No object data for instance " +
+				                           std::to_string(inst->id) + " in " +
+				                           path);
 			}
 		}
-		
+
 		// Attempt to Associate LODs.
-		for(auto& p: instancePool.objects) {
+		for (auto& p : instancePool.objects) {
 			auto object = p.second;
 			InstanceObject* instance = static_cast<InstanceObject*>(object);
-			if( !instance->object->LOD ) {
-				auto lodInstit = modelInstances.find("LOD" + instance->object->modelName.substr(3));
-				if( lodInstit != modelInstances.end() ) {
+			if (!instance->object->LOD) {
+				auto lodInstit = modelInstances.find(
+				    "LOD" + instance->object->modelName.substr(3));
+				if (lodInstit != modelInstances.end()) {
 					instance->LODinstance = lodInstit->second;
 				}
 			}
 		}
-		
+
 		return true;
-	}
-	else
-	{
+	} else {
 		logger->error("Data", "Failed to load IPL " + path);
 		return false;
 	}
-	
+
 	return false;
 }
 
-InstanceObject *GameWorld::createInstance(const uint16_t id, const glm::vec3& pos, const glm::quat& rot)
+InstanceObject* GameWorld::createInstance(const uint16_t id,
+                                          const glm::vec3& pos,
+                                          const glm::quat& rot)
 {
 	auto oi = data->findObjectType<ObjectData>(id);
-	if( oi ) {
-
+	if (oi) {
 		std::string modelname = oi->modelName;
 		std::string texturename = oi->textureName;
 
-		std::transform(std::begin(modelname), std::end(modelname), std::begin(modelname), tolower);
-		std::transform(std::begin(texturename), std::end(texturename), std::begin(texturename), tolower);
+		std::transform(std::begin(modelname), std::end(modelname),
+		               std::begin(modelname), tolower);
+		std::transform(std::begin(texturename), std::end(texturename),
+		               std::begin(texturename), tolower);
 
 		// Ensure the relevant data is loaded.
-		if(! oi->modelName.empty()) {
-			if( modelname != "null" ) {
+		if (!oi->modelName.empty()) {
+			if (modelname != "null") {
 				data->loadDFF(modelname + ".dff", false);
 			}
 		}
-		if(! texturename.empty()) {
+		if (!texturename.empty()) {
 			data->loadTXD(texturename + ".txd", true);
 		}
 
@@ -182,61 +183,49 @@ InstanceObject *GameWorld::createInstance(const uint16_t id, const glm::vec3& po
 		// Check for dynamic data.
 		auto dyit = data->dynamicObjectData.find(oi->modelName);
 		std::shared_ptr<DynamicObjectData> dydata;
-		if( dyit != data->dynamicObjectData.end() ) {
+		if (dyit != data->dynamicObjectData.end()) {
 			dydata = dyit->second;
 		}
 
-		if( modelname.empty() ) {
-			logger->warning("World", "Instance with missing model: " + std::to_string(id));
+		if (modelname.empty()) {
+			logger->warning(
+			    "World", "Instance with missing model: " + std::to_string(id));
 		}
-		
+
 		auto instance = new InstanceObject(
-			this,
-			pos,
-			rot,
-			m,
-			glm::vec3(1.f, 1.f, 1.f),
-			oi, nullptr, dydata
-		);
+		    this, pos, rot, m, glm::vec3(1.f, 1.f, 1.f), oi, nullptr, dydata);
 
 		instancePool.insert(instance);
-        allObjects.push_back(instance);
+		allObjects.push_back(instance);
 
-		if( shouldBeOnGrid(instance) )
-		{
-			addToGrid( instance );
+		if (shouldBeOnGrid(instance)) {
+			addToGrid(instance);
 		}
 
-		modelInstances.insert({
-			oi->modelName,
-			instance
-		});
+		modelInstances.insert({oi->modelName, instance});
 
 		return instance;
 	}
-	
+
 	return nullptr;
 }
 
 void GameWorld::createTraffic(const glm::vec3& near)
 {
 	TrafficDirector director(&aigraph, this);
-	
-	director.populateNearby( near, 100, 5 );
+
+	director.populateNearby(near, 100, 5);
 }
 
 void GameWorld::cleanupTraffic(const glm::vec3& focus)
 {
-	for ( auto& p : pedestrianPool.objects )
-	{
-		if ( p.second->getLifetime() != GameObject::TrafficLifetime )
-		{
+	for (auto& p : pedestrianPool.objects) {
+		if (p.second->getLifetime() != GameObject::TrafficLifetime) {
 			continue;
 		}
-		
-		if ( glm::distance( focus, p.second->getPosition() ) >= 100.f )
-		{
-			destroyObjectQueued( p.second );
+
+		if (glm::distance(focus, p.second->getPosition()) >= 100.f) {
+			destroyObjectQueued(p.second);
 		}
 	}
 	destroyQueuedObjects();
@@ -244,36 +233,32 @@ void GameWorld::cleanupTraffic(const glm::vec3& focus)
 
 #include <ai/PlayerController.hpp>
 #include <core/Logger.hpp>
-CutsceneObject *GameWorld::createCutsceneObject(const uint16_t id, const glm::vec3 &pos, const glm::quat &rot)
+CutsceneObject* GameWorld::createCutsceneObject(const uint16_t id,
+                                                const glm::vec3& pos,
+                                                const glm::quat& rot)
 {
 	std::string modelname;
 	std::string texturename;
 
 	auto type = data->objectTypes.find(id);
-	if( type != data->objectTypes.end() )
-	{
-		if( type->second->class_type == ObjectInformation::_class("HIER") )
-		{
+	if (type != data->objectTypes.end()) {
+		if (type->second->class_type == ObjectInformation::_class("HIER")) {
 			modelname = state->specialModels[id];
 			texturename = state->specialModels[id];
-		}
-		else
-		{
-			if( type->second->class_type == ObjectInformation::_class("OBJS") )
-			{
+		} else {
+			if (type->second->class_type == ObjectInformation::_class("OBJS")) {
 				auto v = static_cast<ObjectData*>(type->second.get());
 				modelname = v->modelName;
 				texturename = v->textureName;
-			}
-			else if( type->second->class_type == ObjectInformation::_class("PEDS") )
-			{
+			} else if (type->second->class_type ==
+			           ObjectInformation::_class("PEDS")) {
 				auto v = static_cast<CharacterData*>(type->second.get());
 				modelname = v->modelName;
 				texturename = v->textureName;
 
-
 				static std::string specialPrefix("special");
-				if(! modelname.compare(0, specialPrefix.size(), specialPrefix) ) {
+				if (!modelname.compare(0, specialPrefix.size(),
+				                       specialPrefix)) {
 					auto sid = modelname.substr(specialPrefix.size());
 					unsigned short specialID = std::atoi(sid.c_str());
 					modelname = state->specialCharacters[specialID];
@@ -283,90 +268,90 @@ CutsceneObject *GameWorld::createCutsceneObject(const uint16_t id, const glm::ve
 		}
 	}
 
-	if( id == 0 ) {
+	if (id == 0) {
 		auto playerobj = pedestrianPool.find(state->playerObject);
-		if( playerobj )
-		{
+		if (playerobj) {
 			modelname = playerobj->model->name;
 		}
 	}
 
 	// Ensure the relevant data is loaded.
-	if( modelname.empty() ) {
-		logger->error("World", "Cutscene object " + std::to_string(id) + " has no model");
+	if (modelname.empty()) {
+		logger->error(
+		    "World", "Cutscene object " + std::to_string(id) + " has no model");
 		return nullptr;
 	}
 
-	if( modelname != "null" ) {
+	if (modelname != "null") {
 		data->loadDFF(modelname + ".dff", false);
 	}
 
-	if(! texturename.empty()) {
+	if (!texturename.empty()) {
 		data->loadTXD(texturename + ".txd", true);
 	}
 
-
 	ModelRef m = data->models[modelname];
 
-	auto instance = new CutsceneObject(
-		this,
-		pos,
-		rot,
-		m);
+	auto instance = new CutsceneObject(this, pos, rot, m);
 
-	cutscenePool.insert( instance );
-    allObjects.push_back(instance);
-
+	cutscenePool.insert(instance);
+	allObjects.push_back(instance);
 
 	return instance;
 }
 
-VehicleObject *GameWorld::createVehicle(const uint16_t id, const glm::vec3& pos, const glm::quat& rot, GameObjectID gid)
+VehicleObject* GameWorld::createVehicle(const uint16_t id, const glm::vec3& pos,
+                                        const glm::quat& rot, GameObjectID gid)
 {
 	auto vti = data->findObjectType<VehicleData>(id);
-	if( vti ) {
-		logger->info("World", "Creating Vehicle ID " + std::to_string(id) + " (" + vti->gameName + ")");
-		
-		if(! vti->modelName.empty()) {
+	if (vti) {
+		logger->info("World", "Creating Vehicle ID " + std::to_string(id) +
+		                          " (" + vti->gameName + ")");
+
+		if (!vti->modelName.empty()) {
 			data->loadDFF(vti->modelName + ".dff");
 		}
-		if(! vti->textureName.empty()) {
+		if (!vti->textureName.empty()) {
 			data->loadTXD(vti->textureName + ".txd");
 		}
-		
+
 		glm::u8vec3 prim(255), sec(128);
-		auto palit = data->vehiclePalettes.find(vti->modelName); // modelname is conveniently lowercase (usually)
-		if(palit != data->vehiclePalettes.end() && palit->second.size() > 0 ) {
-			 std::uniform_int_distribution<int> uniform(0, palit->second.size()-1);
-			 int set = uniform(randomEngine);
-			 prim = data->vehicleColours[palit->second[set].first];
-			 sec = data->vehicleColours[palit->second[set].second];
+		auto palit = data->vehiclePalettes.find(
+		    vti->modelName);  // modelname is conveniently lowercase (usually)
+		if (palit != data->vehiclePalettes.end() && palit->second.size() > 0) {
+			std::uniform_int_distribution<int> uniform(
+			    0, palit->second.size() - 1);
+			int set = uniform(randomEngine);
+			prim = data->vehicleColours[palit->second[set].first];
+			sec = data->vehicleColours[palit->second[set].second];
+		} else {
+			logger->warning("World",
+			                "No colour palette for vehicle " + vti->modelName);
 		}
-		else {
-			logger->warning("World", "No colour palette for vehicle " + vti->modelName);
-		}
-		
+
 		auto wi = data->findObjectType<ObjectData>(vti->wheelModelID);
-		if( wi )
-		{
-			if(! wi->textureName.empty()) {
+		if (wi) {
+			if (!wi->textureName.empty()) {
 				data->loadTXD(wi->textureName + ".txd");
 			}
 		}
-		
+
 		ModelRef& m = data->models[vti->modelName];
 		auto model = m->resource;
 		auto info = data->vehicleInfo.find(vti->handlingID);
-		if(model && info != data->vehicleInfo.end()) {
-			if( info->second->wheels.size() == 0 && info->second->seats.size() == 0 ) {
-				for( const ModelFrame* f : model->frames ) {
+		if (model && info != data->vehicleInfo.end()) {
+			if (info->second->wheels.size() == 0 &&
+			    info->second->seats.size() == 0) {
+				for (const ModelFrame* f : model->frames) {
 					const std::string& name = f->getName();
-					
-					if( name.size() > 5 && name.substr(0, 5) == "wheel" ) {
+
+					if (name.size() > 5 && name.substr(0, 5) == "wheel") {
 						auto frameTrans = f->getMatrix();
-						info->second->wheels.push_back({glm::vec3(frameTrans[3])});
+						info->second->wheels.push_back(
+						    {glm::vec3(frameTrans[3])});
 					}
-					if(name.size() > 3 && name.substr(0, 3) == "ped" && name.substr(name.size()-4) == "seat") {
+					if (name.size() > 3 && name.substr(0, 3) == "ped" &&
+					    name.substr(name.size() - 4) == "seat") {
 						auto p = f->getDefaultTranslation();
 						p.x = p.x * -1.f;
 						info->second->seats.push_back({p});
@@ -377,64 +362,68 @@ VehicleObject *GameWorld::createVehicle(const uint16_t id, const glm::vec3& pos,
 			}
 		}
 
-		auto vehicle = new VehicleObject{ this, pos, rot, m, vti, info->second, prim, sec };
+		auto vehicle =
+		    new VehicleObject{this, pos, rot, m, vti, info->second, prim, sec};
 		vehicle->setGameObjectID(gid);
 
-		vehiclePool.insert( vehicle );
-        allObjects.push_back( vehicle );
+		vehiclePool.insert(vehicle);
+		allObjects.push_back(vehicle);
 
 		return vehicle;
 	}
 	return nullptr;
 }
 
-CharacterObject* GameWorld::createPedestrian(const uint16_t id, const glm::vec3& pos, const glm::quat& rot, GameObjectID gid)
+CharacterObject* GameWorld::createPedestrian(const uint16_t id,
+                                             const glm::vec3& pos,
+                                             const glm::quat& rot,
+                                             GameObjectID gid)
 {
 	auto pt = data->findObjectType<CharacterData>(id);
-	if( pt ) {
-
+	if (pt) {
 		std::string modelname = pt->modelName;
 		std::string texturename = pt->textureName;
 
 		// Ensure the relevant data is loaded.
-		if(! pt->modelName.empty()) {
+		if (!pt->modelName.empty()) {
 			// Some model names have special meanings.
 			/// @todo Should CharacterObjects handle this?
 			static std::string specialPrefix("special");
-			if(! modelname.compare(0, specialPrefix.size(), specialPrefix) ) {
+			if (!modelname.compare(0, specialPrefix.size(), specialPrefix)) {
 				auto sid = modelname.substr(specialPrefix.size());
 				unsigned short specialID = std::atoi(sid.c_str());
 				modelname = state->specialCharacters[specialID];
 				texturename = state->specialCharacters[specialID];
 			}
 
-			if( modelname != "null" ) {
+			if (modelname != "null") {
 				data->loadDFF(modelname + ".dff");
 			}
 		}
-		if(! texturename.empty()) {
+		if (!texturename.empty()) {
 			data->loadTXD(texturename + ".txd");
 		}
 
 		ModelRef m = data->models[modelname];
 
-		if(m && m->resource) {
-			auto ped = new CharacterObject( this, pos, rot, m, pt );
+		if (m && m->resource) {
+			auto ped = new CharacterObject(this, pos, rot, m, pt);
 			ped->setGameObjectID(gid);
 			new DefaultAIController(ped);
-			pedestrianPool.insert( ped );
-            allObjects.push_back( ped );
+			pedestrianPool.insert(ped);
+			allObjects.push_back(ped);
 			return ped;
 		}
 	}
 	return nullptr;
 }
 
-CharacterObject* GameWorld::createPlayer(const glm::vec3& pos, const glm::quat& rot, GameObjectID gid)
+CharacterObject* GameWorld::createPlayer(const glm::vec3& pos,
+                                         const glm::quat& rot, GameObjectID gid)
 {
 	// Player object ID is hardcoded to 0.
 	auto pt = data->findObjectType<CharacterData>(0);
-	if( pt ) {
+	if (pt) {
 		// Model name is also hardcoded.
 		std::string modelname = "player";
 		std::string texturename = "player";
@@ -445,13 +434,13 @@ CharacterObject* GameWorld::createPlayer(const glm::vec3& pos, const glm::quat& 
 
 		ModelRef m = data->models[modelname];
 
-		if(m && m->resource) {
-			auto ped = new CharacterObject( this, pos, rot, m, nullptr );
+		if (m && m->resource) {
+			auto ped = new CharacterObject(this, pos, rot, m, nullptr);
 			ped->setGameObjectID(gid);
 			ped->setLifetime(GameObject::PlayerLifetime);
 			players.push_back(new PlayerController(ped));
 			pedestrianPool.insert(ped);
-            allObjects.push_back( ped );
+			allObjects.push_back(ped);
 			return ped;
 		}
 	}
@@ -460,84 +449,80 @@ CharacterObject* GameWorld::createPlayer(const glm::vec3& pos, const glm::quat& 
 
 void GameWorld::ObjectPool::insert(GameObject* object)
 {
-	if( object->getGameObjectID() == 0 )
-	{
+	if (object->getGameObjectID() == 0) {
 		// Find the lowest free GameObjectID.
 		GameObjectID availID = 1;
-		for( auto& p : objects )
-		{
-			if( p.first == availID ) availID++;
+		for (auto& p : objects) {
+			if (p.first == availID)
+				availID++;
 		}
 
-		object->setGameObjectID( availID );
+		object->setGameObjectID(availID);
 	}
 	objects[object->getGameObjectID()] = object;
 }
 
 GameObject* GameWorld::ObjectPool::find(GameObjectID id) const
 {
-	auto it = objects.find( id );
-	return (it == objects.end())? nullptr : it->second;
+	auto it = objects.find(id);
+	return (it == objects.end()) ? nullptr : it->second;
 }
 
 void GameWorld::ObjectPool::remove(GameObject* object)
 {
-	if( object )
-	{
+	if (object) {
 		auto it = objects.find(object->getGameObjectID());
-		if( it != objects.end() ) {
+		if (it != objects.end()) {
 			it = objects.erase(it);
 		}
 	}
 }
 
-
 GameWorld::ObjectPool& GameWorld::getTypeObjectPool(GameObject* object)
 {
-	switch( object->type() ) {
-		case GameObject::Character:
-			return pedestrianPool;
-		case GameObject::Vehicle:
-			return vehiclePool;
-		case GameObject::Cutscene:
-			return cutscenePool;
-		case GameObject::Instance:
-			return instancePool;
-		case GameObject::Pickup:
-			return pickupPool;
-		case GameObject::Projectile:
-			return projectilePool;
-		default:
-			// error!
-			return pedestrianPool;
+	switch (object->type()) {
+	case GameObject::Character:
+		return pedestrianPool;
+	case GameObject::Vehicle:
+		return vehiclePool;
+	case GameObject::Cutscene:
+		return cutscenePool;
+	case GameObject::Instance:
+		return instancePool;
+	case GameObject::Pickup:
+		return pickupPool;
+	case GameObject::Projectile:
+		return projectilePool;
+	default:
+		// error!
+		return pedestrianPool;
 	}
 }
 
-GameObject*GameWorld::getBlipTarget(const BlipData& blip) const
+GameObject* GameWorld::getBlipTarget(const BlipData& blip) const
 {
-	switch( blip.type )
-	{
-		case BlipData::Vehicle:
-			return vehiclePool.find(blip.target);
-		case BlipData::Character:
-			return pedestrianPool.find(blip.target);
-		case BlipData::Pickup:
-			return pickupPool.find(blip.target);
-		default:
-			return nullptr;
+	switch (blip.type) {
+	case BlipData::Vehicle:
+		return vehiclePool.find(blip.target);
+	case BlipData::Character:
+		return pedestrianPool.find(blip.target);
+	case BlipData::Pickup:
+		return pickupPool.find(blip.target);
+	default:
+		return nullptr;
 	}
 }
 
 void GameWorld::destroyObject(GameObject* object)
 {
 	auto coord = worldToGrid(glm::vec2(object->getPosition()));
-	if( coord.x < 0 || coord.y < 0 || coord.x >= WORLD_GRID_WIDTH || coord.y >= WORLD_GRID_WIDTH )
-	{
+	if (coord.x < 0 || coord.y < 0 || coord.x >= WORLD_GRID_WIDTH ||
+	    coord.y >= WORLD_GRID_WIDTH) {
 		return;
 	}
 	auto index = (coord.x * WORLD_GRID_WIDTH) + coord.y;
 	worldGrid[index].instances.erase(object);
-	
+
 	auto& pool = getTypeObjectPool(object);
 	pool.remove(object);
 
@@ -550,7 +535,7 @@ void GameWorld::destroyObject(GameObject* object)
 	delete object;
 }
 
-void GameWorld::destroyObjectQueued(GameObject *object)
+void GameWorld::destroyObjectQueued(GameObject* object)
 {
 	RW_CHECK(object != nullptr, "destroying a null object?");
 	if (object)
@@ -559,16 +544,15 @@ void GameWorld::destroyObjectQueued(GameObject *object)
 
 void GameWorld::destroyQueuedObjects()
 {
-	while( !deletionQueue.empty() ) {
-		destroyObject( *deletionQueue.begin() );
-		deletionQueue.erase( deletionQueue.begin() );
+	while (!deletionQueue.empty()) {
+		destroyObject(*deletionQueue.begin());
+		deletionQueue.erase(deletionQueue.begin());
 	}
 }
 
 bool GameWorld::shouldBeOnGrid(GameObject* object)
 {
-	if( object->type() != GameObject::Instance )
-	{
+	if (object->type() != GameObject::Instance) {
 		// Only static instances currently.
 		return false;
 	}
@@ -579,73 +563,75 @@ bool GameWorld::shouldBeOnGrid(GameObject* object)
 void GameWorld::addToGrid(GameObject* object)
 {
 	auto coord = worldToGrid(glm::vec2(object->getPosition()));
-	if( coord.x < 0 || coord.y < 0 || coord.x >= WORLD_GRID_WIDTH || coord.y >= WORLD_GRID_WIDTH )
-	{
+	if (coord.x < 0 || coord.y < 0 || coord.x >= WORLD_GRID_WIDTH ||
+	    coord.y >= WORLD_GRID_WIDTH) {
 		return;
 	}
 	auto index = (coord.x * WORLD_GRID_WIDTH) + coord.y;
 	worldGrid[index].instances.insert(object);
-	if( object->model->resource )
-	{
-		float cellhalf = WORLD_CELL_SIZE/2.f;
-		auto world = glm::vec3(glm::vec2(coord) * glm::vec2(WORLD_CELL_SIZE) - glm::vec2(WORLD_GRID_SIZE/2.f) + glm::vec2(cellhalf), 0.f);
+	if (object->model->resource) {
+		float cellhalf = WORLD_CELL_SIZE / 2.f;
+		auto world = glm::vec3(glm::vec2(coord) * glm::vec2(WORLD_CELL_SIZE) -
+		                           glm::vec2(WORLD_GRID_SIZE / 2.f) +
+		                           glm::vec2(cellhalf),
+		                       0.f);
 		auto offset = world - object->getPosition();
-		float maxRadius = glm::length(offset) + object->model->resource->getBoundingRadius();
-		worldGrid[index].boundingRadius = std::max(worldGrid[index].boundingRadius, maxRadius);
+		float maxRadius =
+		    glm::length(offset) + object->model->resource->getBoundingRadius();
+		worldGrid[index].boundingRadius =
+		    std::max(worldGrid[index].boundingRadius, maxRadius);
 	}
 }
 
 glm::ivec2 GameWorld::worldToGrid(const glm::vec2& world)
 {
-	static const float lowerCoord = -(WORLD_GRID_SIZE)/2.f;
-	return glm::ivec2((world - glm::vec2(lowerCoord)) / glm::vec2(WORLD_CELL_SIZE));
+	static const float lowerCoord = -(WORLD_GRID_SIZE) / 2.f;
+	return glm::ivec2((world - glm::vec2(lowerCoord)) /
+	                  glm::vec2(WORLD_CELL_SIZE));
 }
 
 VisualFX* GameWorld::createEffect(VisualFX::EffectType type)
 {
-	auto effect = new VisualFX( type );
+	auto effect = new VisualFX(type);
 	effects.push_back(effect);
 	return effect;
 }
 
 void GameWorld::destroyEffect(VisualFX* effect)
 {
-	for( auto it = effects.begin(); it != effects.end(); )
-	{
-		if( *it == effect )
-		{
-			it = effects.erase( it );
-		}
-		else
-		{
+	for (auto it = effects.begin(); it != effects.end();) {
+		if (*it == effect) {
+			it = effects.erase(it);
+		} else {
 			it++;
 		}
 	}
 }
 
-void GameWorld::doWeaponScan(const WeaponScan &scan)
+void GameWorld::doWeaponScan(const WeaponScan& scan)
 {
-	RW_CHECK(scan.type != WeaponScan::RADIUS, "Radius scans not implemented yet");
+	RW_CHECK(scan.type != WeaponScan::RADIUS,
+	         "Radius scans not implemented yet");
 
-	if( scan.type == WeaponScan::RADIUS ) {
+	if (scan.type == WeaponScan::RADIUS) {
 		// TODO
 		// Requires custom ConvexResultCallback
-	}
-	else if( scan.type == WeaponScan::HITSCAN ) {
+	} else if (scan.type == WeaponScan::HITSCAN) {
 		btVector3 from(scan.center.x, scan.center.y, scan.center.z),
-				to(scan.end.x, scan.end.y, scan.end.z);
+		    to(scan.end.x, scan.end.y, scan.end.z);
 		glm::vec3 hitEnd = scan.end;
 		btCollisionWorld::ClosestRayResultCallback cb(from, to);
 		cb.m_collisionFilterGroup = btBroadphaseProxy::AllFilter;
 		dynamicsWorld->rayTest(from, to, cb);
 		// TODO: did any weapons penetrate?
 
-		if( cb.hasHit() ) {
-			GameObject* go = static_cast<GameObject*>(cb.m_collisionObject->getUserPointer());
+		if (cb.hasHit()) {
+			GameObject* go = static_cast<GameObject*>(
+			    cb.m_collisionObject->getUserPointer());
 			GameObject::DamageInfo di;
-			hitEnd = di.damageLocation = glm::vec3(cb.m_hitPointWorld.x(),
-								  cb.m_hitPointWorld.y(),
-								  cb.m_hitPointWorld.z() );
+			hitEnd = di.damageLocation =
+			    glm::vec3(cb.m_hitPointWorld.x(), cb.m_hitPointWorld.y(),
+			              cb.m_hitPointWorld.z());
 			di.damageSource = scan.center;
 			di.type = GameObject::DamageInfo::Bullet;
 			di.hitpoints = scan.damage;
@@ -654,37 +640,28 @@ void GameWorld::doWeaponScan(const WeaponScan &scan)
 	}
 }
 
-int GameWorld::getHour()
-{
-	return state->basic.gameHour;
-}
+int GameWorld::getHour() { return state->basic.gameHour; }
 
-int GameWorld::getMinute()
-{
-	return state->basic.gameMinute;
-}
+int GameWorld::getMinute() { return state->basic.gameMinute; }
 
-glm::vec3 GameWorld::getGroundAtPosition(const glm::vec3 &pos) const
+glm::vec3 GameWorld::getGroundAtPosition(const glm::vec3& pos) const
 {
 	btVector3 rayFrom(pos.x, pos.y, 100.f);
 	btVector3 rayTo(pos.x, pos.y, -100.f);
 
 	btDynamicsWorld::ClosestRayResultCallback rr(rayFrom, rayTo);
 
-	dynamicsWorld->rayTest( rayFrom, rayTo, rr );
+	dynamicsWorld->rayTest(rayFrom, rayTo, rr);
 
-	if(rr.hasHit()) {
+	if (rr.hasHit()) {
 		auto& ws = rr.m_hitPointWorld;
-		return { ws.x(), ws.y(), ws.z() };
+		return {ws.x(), ws.y(), ws.z()};
 	}
 
 	return pos;
 }
 
-float GameWorld::getGameTime() const
-{
-	return state->gameTime;
-}
+float GameWorld::getGameTime() const { return state->gameTime; }
 
 InventoryItem* GameWorld::getInventoryItem(uint16_t weaponId) const
 {
@@ -698,34 +675,34 @@ InventoryItem* GameWorld::getInventoryItem(uint16_t weaponId) const
 void handleVehicleResponse(GameObject* object, btManifoldPoint& mp, bool isA)
 {
 	bool isVehicle = object->type() == GameObject::Vehicle;
-	if(! isVehicle) return;
-	if( mp.getAppliedImpulse() <= 100.f ) return;
+	if (!isVehicle)
+		return;
+	if (mp.getAppliedImpulse() <= 100.f)
+		return;
 
 	btVector3 src, dmg;
-	if(isA) {
+	if (isA) {
 		src = mp.getPositionWorldOnB();
 		dmg = mp.getPositionWorldOnA();
-	}
-	else {
+	} else {
 		src = mp.getPositionWorldOnA();
 		dmg = mp.getPositionWorldOnB();
 	}
 
-	object->takeDamage({
-							{dmg.x(), dmg.y(), dmg.z()},
-							{src.x(), src.y(), src.z()},
-							0.f,
-							GameObject::DamageInfo::Physics,
-							mp.getAppliedImpulse()
-						});
+	object->takeDamage({{dmg.x(), dmg.y(), dmg.z()},
+	                    {src.x(), src.y(), src.z()},
+	                    0.f,
+	                    GameObject::DamageInfo::Physics,
+	                    mp.getAppliedImpulse()});
 }
 
-bool GameWorld::ContactProcessedCallback(btManifoldPoint &mp, void *body0, void *body1)
+bool GameWorld::ContactProcessedCallback(btManifoldPoint& mp, void* body0,
+                                         void* body1)
 {
 	auto obA = static_cast<btCollisionObject*>(body0);
 	auto obB = static_cast<btCollisionObject*>(body1);
 
-	if( !( obA->getUserPointer() && obB->getUserPointer() ) ) {
+	if (!(obA->getUserPointer() && obB->getUserPointer())) {
 		return false;
 	}
 
@@ -735,22 +712,20 @@ bool GameWorld::ContactProcessedCallback(btManifoldPoint &mp, void *body0, void 
 	bool valA = a && a->type() == GameObject::Instance;
 	bool valB = b && b->type() == GameObject::Instance;
 
-	if( ! (valA && valB) &&	(valB || valA) ) {
-
+	if (!(valA && valB) && (valB || valA)) {
 		// Figure out which is the dynamic instance.
 		InstanceObject* dynInst = nullptr;
 		const btRigidBody* instBody = nullptr, * otherBody = nullptr;
 
 		btVector3 src, dmg;
 
-		if( valA ) {
+		if (valA) {
 			dynInst = static_cast<InstanceObject*>(a);
 			instBody = static_cast<const btRigidBody*>(obA);
 			otherBody = static_cast<const btRigidBody*>(obB);
 			src = mp.getPositionWorldOnB();
 			dmg = mp.getPositionWorldOnA();
-		}
-		else {
+		} else {
 			dynInst = static_cast<InstanceObject*>(b);
 			instBody = static_cast<const btRigidBody*>(obB);
 			otherBody = static_cast<const btRigidBody*>(obA);
@@ -758,70 +733,69 @@ bool GameWorld::ContactProcessedCallback(btManifoldPoint &mp, void *body0, void 
 			dmg = mp.getPositionWorldOnB();
 		}
 
-		if( dynInst->dynamics != nullptr && instBody->isStaticObject() ) {
+		if (dynInst->dynamics != nullptr && instBody->isStaticObject()) {
 			// Attempt to determine relative velocity.
-			auto dV  = (otherBody->getLinearVelocity());
-			auto impulse = dV.length()/ (otherBody->getInvMass());
+			auto dV = (otherBody->getLinearVelocity());
+			auto impulse = dV.length() / (otherBody->getInvMass());
 
-			if( dynInst->dynamics->uprootForce <= impulse ) {
-				dynInst->takeDamage({
-										{dmg.x(), dmg.y(), dmg.z()},
-										{src.x(), src.y(), src.z()},
-										0.f,
-										GameObject::DamageInfo::Physics,
-										impulse
-									});
+			if (dynInst->dynamics->uprootForce <= impulse) {
+				dynInst->takeDamage({{dmg.x(), dmg.y(), dmg.z()},
+				                     {src.x(), src.y(), src.z()},
+				                     0.f,
+				                     GameObject::DamageInfo::Physics,
+				                     impulse});
 			}
 		}
 	}
 
 	// Handle vehicles
-	if(a) handleVehicleResponse(a, mp, true);
-	if(b) handleVehicleResponse(b, mp, false);
+	if (a)
+		handleVehicleResponse(a, mp, true);
+	if (b)
+		handleVehicleResponse(b, mp, false);
 
 	return true;
 }
 
-void GameWorld::PhysicsTickCallback(btDynamicsWorld *physWorld, btScalar timeStep)
+void GameWorld::PhysicsTickCallback(btDynamicsWorld* physWorld,
+                                    btScalar timeStep)
 {
 	GameWorld* world = static_cast<GameWorld*>(physWorld->getWorldUserInfo());
 
-	for( auto& p : world->vehiclePool.objects ) {
+	for (auto& p : world->vehiclePool.objects) {
 		GameObject* object = p.second;
 		static_cast<VehicleObject*>(object)->tickPhysics(timeStep);
 	}
 }
 
-void GameWorld::loadCutscene(const std::string &name)
+void GameWorld::loadCutscene(const std::string& name)
 {
 	std::string lowerName(name);
-	std::transform(lowerName.begin(), lowerName.end(), lowerName.begin(), ::tolower);
+	std::transform(lowerName.begin(), lowerName.end(), lowerName.begin(),
+	               ::tolower);
 
 	auto datfile = data->openFile(lowerName + ".dat");
 
 	CutsceneData* cutscene = new CutsceneData;
 
-	if( datfile ) {
+	if (datfile) {
 		LoaderCutsceneDAT loaderdat;
 		loaderdat.load(cutscene->tracks, datfile);
 	}
 
 	data->loadIFP(lowerName + ".ifp");
 
-	cutsceneAudioLoaded = data->loadAudioStream(name+".mp3");
-	
-	if ( !cutsceneAudioLoaded )
-	{
-		cutsceneAudioLoaded = data->loadAudioStream(name+".wav");
+	cutsceneAudioLoaded = data->loadAudioStream(name + ".mp3");
+
+	if (!cutsceneAudioLoaded) {
+		cutsceneAudioLoaded = data->loadAudioStream(name + ".wav");
 	}
-	
-	if ( !cutsceneAudioLoaded )
-	{
+
+	if (!cutsceneAudioLoaded) {
 		logger->warning("Data", "Failed to load cutscene audio: " + name);
 	}
-	
 
-	if( state->currentCutscene ) {
+	if (state->currentCutscene) {
 		delete state->currentCutscene;
 	}
 	state->currentCutscene = cutscene;
@@ -841,7 +815,7 @@ void GameWorld::startCutscene()
 
 void GameWorld::clearCutscene()
 {
-	for(auto& p : cutscenePool.objects) {
+	for (auto& p : cutscenePool.objects) {
 		destroyObjectQueued(p.second);
 	}
 
@@ -858,9 +832,9 @@ void GameWorld::clearCutscene()
 
 bool GameWorld::isCutsceneDone()
 {
-	if( state->currentCutscene ) {
+	if (state->currentCutscene) {
 		float time = getGameTime() - state->cutsceneStartTime;
-		if( state->skipCutscene ) {
+		if (state->skipCutscene) {
 			return true;
 		}
 		return time > state->currentCutscene->tracks.duration;
@@ -868,72 +842,61 @@ bool GameWorld::isCutsceneDone()
 	return true;
 }
 
-
-void GameWorld::loadSpecialCharacter(const unsigned short index, const std::string &name)
+void GameWorld::loadSpecialCharacter(const unsigned short index,
+                                     const std::string& name)
 {
 	std::string lowerName(name);
-	std::transform(lowerName.begin(), lowerName.end(), lowerName.begin(), ::tolower);
+	std::transform(lowerName.begin(), lowerName.end(), lowerName.begin(),
+	               ::tolower);
 	/// @todo a bit more smarter than this
 	state->specialCharacters[index] = lowerName;
 }
 
-void GameWorld::loadSpecialModel(const unsigned short index, const std::string &name)
+void GameWorld::loadSpecialModel(const unsigned short index,
+                                 const std::string& name)
 {
 	std::string lowerName(name);
-	std::transform(lowerName.begin(), lowerName.end(), lowerName.begin(), ::tolower);
+	std::transform(lowerName.begin(), lowerName.end(), lowerName.begin(),
+	               ::tolower);
 	/// @todo a bit more smarter than this
 	state->specialModels[index] = lowerName;
 }
 
-void GameWorld::disableAIPaths(AIGraphNode::NodeType type, const glm::vec3& min, const glm::vec3& max)
+void GameWorld::disableAIPaths(AIGraphNode::NodeType type, const glm::vec3& min,
+                               const glm::vec3& max)
 {
-	for(AIGraphNode* n : aigraph.nodes)
-	{
-		if( n->type == type )
-		{
-			if( n->position.x >= min.x &&
-				n->position.y >= min.y &&
-				n->position.z >= min.z &&
-				n->position.x <= max.x &&
-				n->position.y <= max.y &&
-				n->position.z <= max.z
-			)
-			{
+	for (AIGraphNode* n : aigraph.nodes) {
+		if (n->type == type) {
+			if (n->position.x >= min.x && n->position.y >= min.y &&
+			    n->position.z >= min.z && n->position.x <= max.x &&
+			    n->position.y <= max.y && n->position.z <= max.z) {
 				n->disabled = true;
 			}
 		}
 	}
 }
 
-void GameWorld::enableAIPaths(AIGraphNode::NodeType type, const glm::vec3& min, const glm::vec3& max)
+void GameWorld::enableAIPaths(AIGraphNode::NodeType type, const glm::vec3& min,
+                              const glm::vec3& max)
 {
-	for(AIGraphNode* n : aigraph.nodes)
-	{
-		if( n->type == type )
-		{
-			if( n->position.x >= min.x &&
-				n->position.y >= min.y &&
-				n->position.z >= min.z &&
-				n->position.x <= max.x &&
-				n->position.y <= max.y &&
-				n->position.z <= max.z
-			)
-			{
+	for (AIGraphNode* n : aigraph.nodes) {
+		if (n->type == type) {
+			if (n->position.x >= min.x && n->position.y >= min.y &&
+			    n->position.z >= min.z && n->position.x <= max.x &&
+			    n->position.y <= max.y && n->position.z <= max.z) {
 				n->disabled = false;
 			}
 		}
 	}
 }
 
-void GameWorld::drawAreaIndicator(AreaIndicatorInfo::AreaIndicatorType type, glm::vec3 position, glm::vec3 radius)
+void GameWorld::drawAreaIndicator(AreaIndicatorInfo::AreaIndicatorType type,
+                                  glm::vec3 position, glm::vec3 radius)
 {
 	areaIndicators.push_back({type, position, radius});
 }
 
-void GameWorld::clearTickData()
-{
-	areaIndicators.clear();
-}
+void GameWorld::clearTickData() { areaIndicators.clear(); }
 
 void GameWorld::setPaused(bool pause)
 {
@@ -941,8 +904,4 @@ void GameWorld::setPaused(bool pause)
 	sound.pause(pause);
 }
 
-bool GameWorld::isPaused() const
-{
-	return paused;
-}
-
+bool GameWorld::isPaused() const { return paused; }

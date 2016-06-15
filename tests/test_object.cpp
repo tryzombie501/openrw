@@ -5,7 +5,7 @@
 
 BOOST_AUTO_TEST_SUITE(ObjectUnitTests)
 
-#if 0 // Tests disabled as object damage logic is unclear
+#if 0  // Tests disabled as object damage logic is unclear
 
 BOOST_AUTO_TEST_CASE(instance_test_damage)
 {

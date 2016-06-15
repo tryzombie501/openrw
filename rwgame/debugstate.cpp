@@ -9,29 +9,27 @@
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/string_cast.hpp>
 
-static void jumpCharacter(RWGame* game, CharacterObject* player, const glm::vec3& target, bool ground = true)
+static void jumpCharacter(RWGame* game, CharacterObject* player,
+                          const glm::vec3& target, bool ground = true)
 {
 	glm::vec3 newPosition = target;
 	if (ground) {
-		newPosition = game->getWorld()->getGroundAtPosition(newPosition) + glm::vec3(0.f, 0.f, 1.f);
+		newPosition = game->getWorld()->getGroundAtPosition(newPosition) +
+		              glm::vec3(0.f, 0.f, 1.f);
 	}
-	if( player )
-	{
-		if( player->getCurrentVehicle() )
-		{
+	if (player) {
+		if (player->getCurrentVehicle()) {
 			player->getCurrentVehicle()->setPosition(newPosition);
-		}
-		else
-		{
+		} else {
 			player->setPosition(newPosition);
 		}
 	}
 }
 
 DebugState::DebugState(RWGame* game, const glm::vec3& vp, const glm::quat& vd)
-	: State(game), _freeLook( false ), _sonicMode( false )
+    : State(game), _freeLook(false), _sonicMode(false)
 {
-	Menu *m = new Menu(2);
+	Menu* m = new Menu(2);
 	m->offset = glm::vec2(10.f, 50.f);
 	float entryHeight = 14.f;
 #if 0
@@ -80,49 +78,60 @@ DebugState::DebugState(RWGame* game, const glm::vec3& vp, const glm::quat& vd)
 		auto playerRot = game->getPlayer()->getCharacter()->getRotation();
 		auto spawnPos = game->getPlayer()->getCharacter()->getPosition();
 		spawnPos += playerRot * glm::vec3(0.f, 3.f, 0.f);
-		auto spawnRot = glm::quat(glm::vec3(0.f, 0.f, glm::roll(playerRot) + glm::half_pi<float>()));
+		auto spawnRot = glm::quat(
+		    glm::vec3(0.f, 0.f, glm::roll(playerRot) + glm::half_pi<float>()));
 		auto car = game->getWorld()->createVehicle(136, spawnPos, spawnRot);
 	}, entryHeight));
-	m->addEntry(Menu::lambda("Quicksave", [=] {
-		game->saveGame("quicksave");
-	}, entryHeight));
-	m->addEntry(Menu::lambda("Quickload", [=] {
-		game->loadGame("quicksave");
-	}, entryHeight));
+	m->addEntry(Menu::lambda("Quicksave", [=] { game->saveGame("quicksave"); },
+	                         entryHeight));
+	m->addEntry(Menu::lambda("Quickload", [=] { game->loadGame("quicksave"); },
+	                         entryHeight));
 	m->addEntry(Menu::lambda("Jump to Debug Camera", [=] {
-		jumpCharacter(game, game->getPlayer()->getCharacter(), _debugCam.position + _debugCam.rotation * glm::vec3(3.f, 0.f, 0.f), false);
+		jumpCharacter(
+		    game, game->getPlayer()->getCharacter(),
+		    _debugCam.position + _debugCam.rotation * glm::vec3(3.f, 0.f, 0.f),
+		    false);
 	}, entryHeight));
 	m->addEntry(Menu::lambda("Jump to Docks", [=] {
-		jumpCharacter(game, game->getPlayer()->getCharacter(), glm::vec3(1390.f, -837.f, 100.f));
+		jumpCharacter(game, game->getPlayer()->getCharacter(),
+		              glm::vec3(1390.f, -837.f, 100.f));
 	}, entryHeight));
 	m->addEntry(Menu::lambda("Jump to Garage", [=] {
-		jumpCharacter(game, game->getPlayer()->getCharacter(), glm::vec3(270.f, -605.f, 40.f));
+		jumpCharacter(game, game->getPlayer()->getCharacter(),
+		              glm::vec3(270.f, -605.f, 40.f));
 	}, entryHeight));
 	m->addEntry(Menu::lambda("Jump to Airport", [=] {
-		jumpCharacter(game, game->getPlayer()->getCharacter(), glm::vec3(-950.f, -980.f, 12.f));
+		jumpCharacter(game, game->getPlayer()->getCharacter(),
+		              glm::vec3(-950.f, -980.f, 12.f));
 	}, entryHeight));
 	m->addEntry(Menu::lambda("Jump to Hideout", [=] {
-		jumpCharacter(game, game->getPlayer()->getCharacter(), glm::vec3(875.0, -309.0, 100.0));
+		jumpCharacter(game, game->getPlayer()->getCharacter(),
+		              glm::vec3(875.0, -309.0, 100.0));
 	}, entryHeight));
 	m->addEntry(Menu::lambda("Jump to Luigi's", [=] {
-		jumpCharacter(game, game->getPlayer()->getCharacter(), glm::vec3(902.75, -425.56, 100.0));
+		jumpCharacter(game, game->getPlayer()->getCharacter(),
+		              glm::vec3(902.75, -425.56, 100.0));
 	}, entryHeight));
 	m->addEntry(Menu::lambda("Jump to Hospital", [=] {
-		jumpCharacter(game, game->getPlayer()->getCharacter(), glm::vec3(1123.77, -569.15, 100.0));
+		jumpCharacter(game, game->getPlayer()->getCharacter(),
+		              glm::vec3(1123.77, -569.15, 100.0));
 	}, entryHeight));
 	m->addEntry(Menu::lambda("Add Follower", [=] {
 		auto spawnPos = game->getPlayer()->getCharacter()->getPosition();
-		spawnPos += game->getPlayer()->getCharacter()->getRotation() * glm::vec3(-1.f, 0.f, 0.f);
+		spawnPos += game->getPlayer()->getCharacter()->getRotation() *
+		            glm::vec3(-1.f, 0.f, 0.f);
 		auto follower = game->getWorld()->createPedestrian(12, spawnPos);
 		jumpCharacter(game, follower, spawnPos);
 		follower->controller->setGoal(CharacterController::FollowLeader);
-		follower->controller->setTargetCharacter(game->getPlayer()->getCharacter());
+		follower->controller->setTargetCharacter(
+		    game->getPlayer()->getCharacter());
 	}, entryHeight));
 	m->addEntry(Menu::lambda("Set Super Jump", [=] {
 		game->getPlayer()->getCharacter()->setJumpSpeed(20.f);
 	}, entryHeight));
 	m->addEntry(Menu::lambda("Set Normal Jump", [=] {
-		game->getPlayer()->getCharacter()->setJumpSpeed(CharacterObject::DefaultJumpSpeed);
+		game->getPlayer()->getCharacter()->setJumpSpeed(
+		    CharacterObject::DefaultJumpSpeed);
 	}, entryHeight));
 	m->addEntry(Menu::lambda("Full Health", [=] {
 		game->getPlayer()->getCharacter()->getCurrentState().health = 100.f;
@@ -135,58 +144,36 @@ DebugState::DebugState(RWGame* game, const glm::vec3& vp, const glm::quat& vd)
 	}, entryHeight));
 	m->addEntry(Menu::lambda("Unsolid garage doors", [=] {
 
-		std::vector<std::string> garageDoorModels {
-			"8ballsuburbandoor",
-			"amcogaragedoor",
-			"bankjobdoor",
-			"bombdoor",
-			"crushercrush",
-			"crushertop",
-			"door2_garage",
-			"door3_garage",
-			"door4_garage",
-			"door_bombshop",
-			"door_col_compnd_01",
-			"door_col_compnd_02",
-			"door_col_compnd_03",
-			"door_col_compnd_04",
-			"door_col_compnd_05",
-			"door_jmsgrage",
-			"door_sfehousegrge",
-			"double_garage_dr",
-			"impex_door",
-			"impexpsubgrgdoor",
-			"ind_plyrwoor",
-			"ind_slidedoor",
-			"jamesgrge_kb",
-			"leveldoor2",
-			"oddjgaragdoor",
-			"plysve_gragedoor",
-			"SalvGarage",
-			"shedgaragedoor",
-			"Sub_sprayshopdoor",
-			"towergaragedoor1",
-			"towergaragedoor2",
-			"towergaragedoor3",
-			"vheistlocdoor"
-		};
+		std::vector<std::string> garageDoorModels{
+		    "8ballsuburbandoor",  "amcogaragedoor",     "bankjobdoor",
+		    "bombdoor",           "crushercrush",       "crushertop",
+		    "door2_garage",       "door3_garage",       "door4_garage",
+		    "door_bombshop",      "door_col_compnd_01", "door_col_compnd_02",
+		    "door_col_compnd_03", "door_col_compnd_04", "door_col_compnd_05",
+		    "door_jmsgrage",      "door_sfehousegrge",  "double_garage_dr",
+		    "impex_door",         "impexpsubgrgdoor",   "ind_plyrwoor",
+		    "ind_slidedoor",      "jamesgrge_kb",       "leveldoor2",
+		    "oddjgaragdoor",      "plysve_gragedoor",   "SalvGarage",
+		    "shedgaragedoor",     "Sub_sprayshopdoor",  "towergaragedoor1",
+		    "towergaragedoor2",   "towergaragedoor3",   "vheistlocdoor"};
 
 		auto gw = game->getWorld();
-		for(auto& i : gw->instancePool.objects) {
+		for (auto& i : gw->instancePool.objects) {
 			auto obj = static_cast<InstanceObject*>(i.second);
-			if (std::find(garageDoorModels.begin(), garageDoorModels.end(), obj->model->name) != garageDoorModels.end()) {
+			if (std::find(garageDoorModels.begin(), garageDoorModels.end(),
+			              obj->model->name) != garageDoorModels.end()) {
 				obj->setSolid(false);
 			}
 		}
 	}, entryHeight));
 
-
 	// Optional block if the player is in a vehicle
 	auto player = game->getPlayer()->getCharacter();
 	auto cv = player->getCurrentVehicle();
-	if(cv) {
+	if (cv) {
 		m->addEntry(Menu::lambda("Flip vehicle", [=] {
-			cv->setRotation(cv->getRotation() * glm::quat(glm::vec3(0.f, glm::pi<float>(), 0.f)));
+			cv->setRotation(cv->getRotation() *
+			                glm::quat(glm::vec3(0.f, glm::pi<float>(), 0.f)));
 		}, entryHeight));
 	}
 
@@ -196,46 +183,42 @@ DebugState::DebugState(RWGame* game, const glm::vec3& vp, const glm::quat& vd)
 	_debugCam.rotation = vd;
 }
 
-void DebugState::enter()
-{
-}
+void DebugState::enter() {}
 
-void DebugState::exit()
-{
-
-}
+void DebugState::exit() {}
 
 void DebugState::tick(float dt)
 {
 	/*if(debugObject) {
-		auto p = debugObject->getPosition();
-		ss << "Position: " << p.x << " " << p.y << " " << p.z << std::endl;
-		ss << "Health: " << debugObject->mHealth << std::endl;
-		if(debugObject->model) {
-			auto m = debugObject->model;
-			ss << "Textures: " << std::endl;
-			for(auto it = m->geometries.begin(); it != m->geometries.end();
-				++it )
-			{
-				auto g = *it;
-				for(auto itt = g->materials.begin(); itt != g->materials.end();
-					++itt)
-				{
-					for(auto tit = itt->textures.begin(); tit != itt->textures.end();
-						++tit)
-					{
-						ss << " " << tit->name << std::endl;
-					}
-				}
-			}
-		}
-		if(debugObject->type() == GameObject::Vehicle) {
-			GTAVehicle* vehicle = static_cast<GTAVehicle*>(debugObject);
-			ss << "ID: " << vehicle->info->handling.ID << std::endl;
-		}
+	    auto p = debugObject->getPosition();
+	    ss << "Position: " << p.x << " " << p.y << " " << p.z << std::endl;
+	    ss << "Health: " << debugObject->mHealth << std::endl;
+	    if(debugObject->model) {
+	        auto m = debugObject->model;
+	        ss << "Textures: " << std::endl;
+	        for(auto it = m->geometries.begin(); it != m->geometries.end();
+	            ++it )
+	        {
+	            auto g = *it;
+	            for(auto itt = g->materials.begin(); itt != g->materials.end();
+	                ++itt)
+	            {
+	                for(auto tit = itt->textures.begin(); tit !=
+	itt->textures.end();
+	                    ++tit)
+	                {
+	                    ss << " " << tit->name << std::endl;
+	                }
+	            }
+	        }
+	    }
+	    if(debugObject->type() == GameObject::Vehicle) {
+	        GTAVehicle* vehicle = static_cast<GTAVehicle*>(debugObject);
+	        ss << "ID: " << vehicle->info->handling.ID << std::endl;
+	    }
 	}*/
 
-	if( _freeLook ) {
+	if (_freeLook) {
 		float qpi = glm::half_pi<float>();
 
 		sf::Vector2i screenCenter{sf::Vector2i{getWindow().getSize()} / 2};
@@ -251,10 +234,12 @@ void DebugState::tick(float dt)
 		else if (_debugLook.y < -qpi)
 			_debugLook.y = -qpi;
 
-		_debugCam.rotation = glm::angleAxis(_debugLook.x, glm::vec3(0.f, 0.f, 1.f))
-				* glm::angleAxis(_debugLook.y, glm::vec3(0.f, 1.f, 0.f));
+		_debugCam.rotation =
+		    glm::angleAxis(_debugLook.x, glm::vec3(0.f, 0.f, 1.f)) *
+		    glm::angleAxis(_debugLook.y, glm::vec3(0.f, 1.f, 0.f));
 
-		_debugCam.position += _debugCam.rotation * _movement * dt * (_sonicMode ? 100.f : 10.f);
+		_debugCam.position +=
+		    _debugCam.rotation * _movement * dt * (_sonicMode ? 100.f : 10.f);
 	}
 }
 
@@ -267,7 +252,7 @@ void DebugState::draw(GameRenderer* r)
 	TextRenderer::TextInfo ti;
 	ti.text = ss.str();
 	ti.font = 2;
-	ti.screenPosition = glm::vec2( 10.f, 10.f );
+	ti.screenPosition = glm::vec2(10.f, 10.f);
 	ti.size = 15.f;
 	ti.baseColour = glm::u8vec3(255);
 	r->text.renderText(ti);
@@ -275,12 +260,13 @@ void DebugState::draw(GameRenderer* r)
 	State::draw(r);
 }
 
-void DebugState::handleEvent(const sf::Event &e)
+void DebugState::handleEvent(const sf::Event& e)
 {
-	switch(e.type) {
+	switch (e.type) {
 	case sf::Event::KeyPressed:
-		switch(e.key.code) {
-		default: break;
+		switch (e.key.code) {
+		default:
+			break;
 		case sf::Keyboard::Escape:
 			StateManager::get().exit();
 			break;
@@ -288,13 +274,13 @@ void DebugState::handleEvent(const sf::Event &e)
 			_movement.x = 1.f;
 			break;
 		case sf::Keyboard::S:
-			_movement.x =-1.f;
+			_movement.x = -1.f;
 			break;
 		case sf::Keyboard::A:
 			_movement.y = 1.f;
 			break;
 		case sf::Keyboard::D:
-			_movement.y =-1.f;
+			_movement.y = -1.f;
 			break;
 		case sf::Keyboard::F:
 			_freeLook = !_freeLook;
@@ -308,7 +294,7 @@ void DebugState::handleEvent(const sf::Event &e)
 		}
 		break;
 	case sf::Event::KeyReleased:
-		switch(e.key.code) {
+		switch (e.key.code) {
 		case sf::Keyboard::W:
 		case sf::Keyboard::S:
 			_movement.x = 0.f;
@@ -320,35 +306,37 @@ void DebugState::handleEvent(const sf::Event &e)
 		case sf::Keyboard::LShift:
 			_sonicMode = false;
 			break;
-		default: break;
+		default:
+			break;
 		}
-	default: break;
+	default:
+		break;
 	}
 	State::handleEvent(e);
 }
 
 void DebugState::printCameraDetails()
 {
-	std::cout << " " << _debugCam.position.x << " " << _debugCam.position.y << " " << _debugCam.position.z
-			  << " " << _debugCam.rotation.x << " " << _debugCam.rotation.y << " " << _debugCam.rotation.z
-			  << " " << _debugCam.rotation.w << std::endl;
+	std::cout << " " << _debugCam.position.x << " " << _debugCam.position.y
+	          << " " << _debugCam.position.z << " " << _debugCam.rotation.x
+	          << " " << _debugCam.rotation.y << " " << _debugCam.rotation.z
+	          << " " << _debugCam.rotation.w << std::endl;
 }
 
 void DebugState::spawnVehicle(unsigned int id)
 {
 	auto ch = game->getPlayer()->getCharacter();
-	if(! ch) return;
+	if (!ch)
+		return;
 
 	glm::vec3 fwd = ch->rotation * glm::vec3(0.f, 1.f, 0.f);
 
 	glm::vec3 hit, normal;
-	if(game->hitWorldRay(ch->position + (fwd * 5.f), {0.f, 0.f, -2.f}, hit, normal)) {
+	if (game->hitWorldRay(ch->position + (fwd * 5.f), {0.f, 0.f, -2.f}, hit,
+	                      normal)) {
 		auto spawnpos = hit + normal;
 		getWorld()->createVehicle(id, spawnpos, glm::quat());
 	}
 }
 
-const ViewCamera &DebugState::getCamera()
-{
-	return _debugCam;
-}
+const ViewCamera& DebugState::getCamera() { return _debugCam; }

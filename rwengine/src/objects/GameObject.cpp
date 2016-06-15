@@ -7,26 +7,20 @@
 
 GameObject::~GameObject()
 {
-	if(animator)
-	{
+	if (animator) {
 		delete animator;
 	}
-	if(skeleton)
-	{
+	if (skeleton) {
 		delete skeleton;
 	}
 }
-
 
 void GameObject::setPosition(const glm::vec3& pos)
 {
 	_lastPosition = position = pos;
 }
 
-glm::quat GameObject::getRotation() const
-{
-	return rotation;
-}
+glm::quat GameObject::getRotation() const { return rotation; }
 
 void GameObject::setRotation(const glm::quat& orientation)
 {
@@ -35,7 +29,7 @@ void GameObject::setRotation(const glm::quat& orientation)
 
 float GameObject::getHeading() const
 {
-  auto hdg = glm::roll(getRotation());
+	auto hdg = glm::roll(getRotation());
 	return hdg / glm::pi<float>() * 180.f;
 }
 

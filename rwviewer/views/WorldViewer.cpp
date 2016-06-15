@@ -3,13 +3,14 @@
 
 #include <QFileDialog>
 
-WorldViewer::WorldViewer(ViewerWidget* viewer, QWidget* parent, Qt::WindowFlags f)
-: ViewerInterface(parent, f)
+WorldViewer::WorldViewer(ViewerWidget* viewer, QWidget* parent,
+                         Qt::WindowFlags f)
+    : ViewerInterface(parent, f)
 {
 	mainLayout = new QVBoxLayout;
 
 	viewerWidget = viewer;
-	viewerWidget->setMinimumSize(250,250);
+	viewerWidget->setMinimumSize(250, 250);
 
 	this->setLayout(mainLayout);
 }
@@ -31,8 +32,7 @@ void WorldViewer::loadPlacements(const QString& file)
 void WorldViewer::loadPlacements()
 {
 	QFileDialog dialog(this, "Open Placements", "", "Placement (*.ipl)");
-	if(dialog.exec()) {
+	if (dialog.exec()) {
 		loadPlacements(dialog.selectedFiles()[0]);
 	}
 }
-

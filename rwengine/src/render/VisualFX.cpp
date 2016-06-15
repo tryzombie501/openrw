@@ -2,26 +2,15 @@
 
 #include <memory>
 
-VisualFX::LightData::~LightData()
+VisualFX::LightData::~LightData() {}
+
+VisualFX::ParticleData::~ParticleData() {}
+
+VisualFX::TrailData::~TrailData() {}
+
+VisualFX::VisualFX(VisualFX::EffectType type) : type(type)
 {
-
-}
-
-VisualFX::ParticleData::~ParticleData()
-{
-
-}
-
-VisualFX::TrailData::~TrailData()
-{
-
-}
-
-VisualFX::VisualFX(VisualFX::EffectType type)
-    : type(type)
-{
-	switch( type )
-	{
+	switch (type) {
 	case VisualFX::Light:
 		new (&light) LightData;
 		break;
@@ -36,8 +25,7 @@ VisualFX::VisualFX(VisualFX::EffectType type)
 
 VisualFX::~VisualFX()
 {
-	switch( type )
-	{
+	switch (type) {
 	case VisualFX::Light:
 		light.~LightData();
 		break;
@@ -53,12 +41,10 @@ VisualFX::~VisualFX()
 const glm::vec3& VisualFX::getPosition() const
 {
 	static glm::vec3 errorRef;
-	switch( type )
-	{
+	switch (type) {
 	case VisualFX::Particle:
 		return particle.position;
 	default:
 		return errorRef;
 	}
 }
-

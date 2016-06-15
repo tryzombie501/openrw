@@ -15,9 +15,9 @@ BOOST_AUTO_TEST_CASE(load_test)
 
 		LoaderGXT loader;
 
-		loader.load( texts, d );
+		loader.load(texts, d);
 
-		BOOST_CHECK_EQUAL( texts.text("1008"), "BUSTED" );
+		BOOST_CHECK_EQUAL(texts.text("1008"), "BUSTED");
 	}
 }
 
@@ -25,11 +25,7 @@ BOOST_AUTO_TEST_CASE(big_test)
 {
 	// Check that makeBig creates a text in the right place
 	{
-		auto big = ScreenTextEntry::makeBig(
-					"TEST_1",
-					"Test String",
-					1,
-					5000);
+		auto big = ScreenTextEntry::makeBig("TEST_1", "Test String", 1, 5000);
 
 		BOOST_CHECK_EQUAL("TEST_1", big.id);
 		BOOST_CHECK_EQUAL("Test String", big.text);
@@ -39,11 +35,7 @@ BOOST_AUTO_TEST_CASE(big_test)
 		BOOST_CHECK_EQUAL(50, big.size);
 	}
 	{
-		auto big = ScreenTextEntry::makeBig(
-					"TEST_1",
-					"Test String",
-					2,
-					5000);
+		auto big = ScreenTextEntry::makeBig("TEST_1", "Test String", 2, 5000);
 
 		BOOST_CHECK_EQUAL("Test String", big.text);
 		BOOST_CHECK_EQUAL(5000, big.durationMS);
@@ -55,9 +47,7 @@ BOOST_AUTO_TEST_CASE(big_test)
 
 BOOST_AUTO_TEST_CASE(help_test)
 {
-	auto help = ScreenTextEntry::makeHelp(
-				"TEST_1",
-				"Test Help");
+	auto help = ScreenTextEntry::makeHelp("TEST_1", "Test Help");
 
 	BOOST_CHECK_EQUAL("Test Help", help.text);
 	BOOST_CHECK_EQUAL(5000, help.durationMS);
@@ -72,16 +62,9 @@ BOOST_AUTO_TEST_CASE(queue_test)
 	ScreenText st;
 
 	st.addText<ScreenTextType::Big>(
-				ScreenTextEntry::makeBig(
-					"TEST_1",
-					"Test String",
-					2,
-					5000));
+	    ScreenTextEntry::makeBig("TEST_1", "Test String", 2, 5000));
 	st.addText<ScreenTextType::HighPriority>(
-				ScreenTextEntry::makeHighPriority(
-					"TEST_1",
-					"Test String",
-					5000));
+	    ScreenTextEntry::makeHighPriority("TEST_1", "Test String", 5000));
 
 	BOOST_REQUIRE(st.getText<ScreenTextType::Big>().size() == 1);
 	BOOST_CHECK_EQUAL("Test String", st.getText<ScreenTextType::Big>()[0].text);
@@ -101,11 +84,7 @@ BOOST_AUTO_TEST_CASE(clear_test)
 	ScreenText st;
 
 	st.addText<ScreenTextType::Big>(
-				ScreenTextEntry::makeBig(
-					"TEST_1",
-					"Test String",
-					2,
-					5000));
+	    ScreenTextEntry::makeBig("TEST_1", "Test String", 2, 5000));
 
 	BOOST_CHECK_EQUAL(1, st.getText<ScreenTextType::Big>().size());
 
@@ -130,7 +109,7 @@ BOOST_AUTO_TEST_CASE(format_test)
 	auto f3 = ScreenText::format(codeStr3, "x");
 	BOOST_CHECK_EQUAL(f3, "Hello worldx");
 
-	auto f4  = ScreenText::format(codeStr3, "x", "k");
+	auto f4 = ScreenText::format(codeStr3, "x", "k");
 	BOOST_CHECK_EQUAL(f4, "Hello worldx");
 }
 
@@ -140,25 +119,13 @@ BOOST_AUTO_TEST_CASE(format_remove)
 	ScreenText st;
 
 	st.addText<ScreenTextType::Big>(
-				ScreenTextEntry::makeBig(
-					"TEST_2",
-					"Test String",
-					2,
-					5000));
+	    ScreenTextEntry::makeBig("TEST_2", "Test String", 2, 5000));
 
 	st.addText<ScreenTextType::Big>(
-				ScreenTextEntry::makeBig(
-					"TEST_1",
-					"Test String",
-					2,
-					5000));
+	    ScreenTextEntry::makeBig("TEST_1", "Test String", 2, 5000));
 
 	st.addText<ScreenTextType::Big>(
-				ScreenTextEntry::makeBig(
-					"TEST_1",
-					"Test String",
-					2,
-					5000));
+	    ScreenTextEntry::makeBig("TEST_1", "Test String", 2, 5000));
 
 	BOOST_CHECK_EQUAL(3, st.getText<ScreenTextType::Big>().size());
 

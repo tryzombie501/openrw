@@ -9,16 +9,16 @@ BOOST_AUTO_TEST_SUITE(ResourceTests)
 BOOST_AUTO_TEST_CASE(test_ResourceHandle)
 {
 	int resource = 42;
-	IntRef ref { new ResourceHandle<int>("") };
-	
-	BOOST_CHECK_EQUAL( ref->resource, nullptr );
-	BOOST_CHECK_EQUAL( ref->state, RW::Loading );
-	
+	IntRef ref{new ResourceHandle<int>("")};
+
+	BOOST_CHECK_EQUAL(ref->resource, nullptr);
+	BOOST_CHECK_EQUAL(ref->state, RW::Loading);
+
 	ref->state = RW::Loaded;
 	ref->resource = &resource;
-	
-	BOOST_CHECK_EQUAL( ref->resource, &resource );
-	BOOST_CHECK_EQUAL( ref->state, RW::Loaded );
+
+	BOOST_CHECK_EQUAL(ref->resource, &resource);
+	BOOST_CHECK_EQUAL(ref->state, RW::Loaded);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

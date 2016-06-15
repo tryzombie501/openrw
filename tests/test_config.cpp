@@ -9,7 +9,7 @@ BOOST_AUTO_TEST_CASE(test_loading)
 	// Write out a temporary file
 	std::ofstream test_config("/tmp/openrw_test.ini");
 	test_config << "[game]\n"
-				<< "path=/dev/test" << std::endl;
+	            << "path=/dev/test" << std::endl;
 
 	GameConfig config("openrw_test.ini", "/tmp");
 

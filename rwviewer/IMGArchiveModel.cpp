@@ -2,13 +2,14 @@
 
 QVariant IMGArchiveModel::data(const QModelIndex& index, int role) const
 {
-	if(role == Qt::DisplayRole) {
-		if(index.row() >= 0 && (unsigned) index.row() < archive.getAssetCount()) {
+	if (role == Qt::DisplayRole) {
+		if (index.row() >= 0 &&
+		    (unsigned)index.row() < archive.getAssetCount()) {
 			auto& f = archive.getAssetInfoByIndex(index.row());
-			if(index.column() == 0) {
+			if (index.column() == 0) {
 				return QString(f.name);
 			}
-			if(index.column() == 1) {
+			if (index.column() == 1) {
 				return f.size;
 			}
 		}
@@ -16,13 +17,14 @@ QVariant IMGArchiveModel::data(const QModelIndex& index, int role) const
 	return QVariant::Invalid;
 }
 
-QVariant IMGArchiveModel::headerData(int section, Qt::Orientation orientation, int role) const
+QVariant IMGArchiveModel::headerData(int section, Qt::Orientation orientation,
+                                     int role) const
 {
-	if(role == Qt::DisplayRole && orientation == Qt::Horizontal) {
-		if(section == 0) {
+	if (role == Qt::DisplayRole && orientation == Qt::Horizontal) {
+		if (section == 0) {
 			return "Name";
 		}
-		if(section == 1) {
+		if (section == 1) {
 			return "Size";
 		}
 	}
@@ -34,8 +36,4 @@ int IMGArchiveModel::rowCount(const QModelIndex& parent) const
 	return archive.getAssetCount();
 }
 
-int IMGArchiveModel::columnCount(const QModelIndex& parent) const
-{
-	return 2;
-}
-
+int IMGArchiveModel::columnCount(const QModelIndex& parent) const { return 2; }

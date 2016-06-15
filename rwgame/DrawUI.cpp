@@ -25,41 +25,43 @@ const float ui_mapSize = 150.f;
 const float ui_worldSizeMin = 200.f;
 const float ui_worldSizeMax = 300.f;
 
-void drawMap(ViewCamera& currentView,  PlayerController* player, GameWorld* world, GameRenderer* render)
+void drawMap(ViewCamera& currentView, PlayerController* player,
+             GameWorld* world, GameRenderer* render)
 {
 	MapRenderer::MapInfo map;
-	
+
 	glm::quat camRot = currentView.rotation;
-	
-	map.rotation = glm::roll(camRot) - M_PI/2.f;
+
+	map.rotation = glm::roll(camRot) - M_PI / 2.f;
 	map.worldSize = ui_worldSizeMin;
 	map.worldSize = ui_worldSizeMax;
-	if( player )
-	{
+	if (player) {
 		map.worldCenter = glm::vec2(player->getCharacter()->getPosition());
 	}
 
-	const glm::ivec2 &vp = render->getRenderer()->getViewport();
+	const glm::ivec2& vp = render->getRenderer()->getViewport();
 
-	glm::vec2 mapTop = glm::vec2(ui_outerMargin, vp.y - (ui_outerMargin + ui_mapSize));
-	glm::vec2 mapBottom = glm::vec2(ui_outerMargin + ui_mapSize, vp.y - ui_outerMargin);
+	glm::vec2 mapTop =
+	    glm::vec2(ui_outerMargin, vp.y - (ui_outerMargin + ui_mapSize));
+	glm::vec2 mapBottom =
+	    glm::vec2(ui_outerMargin + ui_mapSize, vp.y - ui_outerMargin);
 
-	map.screenPosition = (mapTop + mapBottom)/2.f;
+	map.screenPosition = (mapTop + mapBottom) / 2.f;
 	map.screenSize = ui_mapSize * 0.95;
-	
+
 	render->map.draw(world, map);
 }
 
-void drawPlayerInfo(PlayerController* player, GameWorld* world, GameRenderer* render)
+void drawPlayerInfo(PlayerController* player, GameWorld* world,
+                    GameRenderer* render)
 {
 	float infoTextX = render->getRenderer()->getViewport().x -
-			(ui_outerMargin + ui_weaponSize + ui_infoMargin);
+	                  (ui_outerMargin + ui_weaponSize + ui_infoMargin);
 	float infoTextY = 0.f + ui_outerMargin;
 	float iconX = render->getRenderer()->getViewport().x -
-			(ui_outerMargin + ui_weaponSize);
+	              (ui_outerMargin + ui_weaponSize);
 	float iconY = ui_outerMargin;
-	float wantedX = render->getRenderer()->getViewport().x -
-			(ui_outerMargin);
+	float wantedX = render->getRenderer()->getViewport().x - (ui_outerMargin);
 	float wantedY = ui_outerMargin + ui_weaponSize + 3.f;
 
 	TextRenderer::TextInfo ti;
@@ -70,13 +72,12 @@ void drawPlayerInfo(PlayerController* player, GameWorld* world, GameRenderer* re
 	{
 		std::stringstream ss;
 		ss << std::setw(2) << std::setfill('0') << world->getHour()
-		   << std::setw(0) << ":"
-		   << std::setw(2) << world->getMinute();
+		   << std::setw(0) << ":" << std::setw(2) << world->getMinute();
 
 		ti.text = ss.str();
 	}
 	ti.baseColour = ui_shadowColour;
-	ti.screenPosition = glm::vec2(infoTextX + 1.f, infoTextY+1.f);
+	ti.screenPosition = glm::vec2(infoTextX + 1.f, infoTextY + 1.f);
 	render->text.renderText(ti);
 
 	ti.baseColour = ui_timeColour;
@@ -87,7 +88,7 @@ void drawPlayerInfo(PlayerController* player, GameWorld* world, GameRenderer* re
 
 	ti.text = "$" + std::to_string(world->state->playerInfo.money);
 	ti.baseColour = ui_shadowColour;
-	ti.screenPosition = glm::vec2(infoTextX + 1.f, infoTextY+1.f);
+	ti.screenPosition = glm::vec2(infoTextX + 1.f, infoTextY + 1.f);
 	render->text.renderText(ti);
 
 	ti.baseColour = ui_moneyColour;
@@ -103,21 +104,21 @@ void drawPlayerInfo(PlayerController* player, GameWorld* world, GameRenderer* re
 		ti.text = ss.str();
 	}
 	ti.baseColour = ui_shadowColour;
-	ti.screenPosition = glm::vec2(infoTextX + 1.f, infoTextY+1.f);
+	ti.screenPosition = glm::vec2(infoTextX + 1.f, infoTextY + 1.f);
 	render->text.renderText(ti);
 
 	ti.baseColour = ui_healthColour;
 	ti.screenPosition = glm::vec2(infoTextX, infoTextY);
 	render->text.renderText(ti);
 
-	if (player->getCharacter()->getCurrentState().armour > 0)
-	{
+	if (player->getCharacter()->getCurrentState().armour > 0) {
 		std::stringstream ss;
 		ss << "[" << std::setw(3) << std::setfill('0')
 		   << (int)player->getCharacter()->getCurrentState().armour;
 		ti.text = ss.str();
 		ti.baseColour = ui_shadowColour;
-		ti.screenPosition = glm::vec2(infoTextX + 1.f - ui_armourOffset, infoTextY+1.f);
+		ti.screenPosition =
+		    glm::vec2(infoTextX + 1.f - ui_armourOffset, infoTextY + 1.f);
 		render->text.renderText(ti);
 
 		ti.baseColour = ui_armourColour;
@@ -134,7 +135,7 @@ void drawPlayerInfo(PlayerController* player, GameWorld* world, GameRenderer* re
 	ti.screenPosition = glm::vec2(wantedX + 1.f, wantedY + 1.f);
 	render->text.renderText(ti);
 
-#if 0 // Useful for debugging
+#if 0  // Useful for debugging
 	ti.text = "ABCDEFGHIJKLMANOQRTSWXYZ\nM0123456789";
 	ti.size = 30;
 	ti.align = TextRenderer::TextInfo::Left;
@@ -146,14 +147,13 @@ void drawPlayerInfo(PlayerController* player, GameWorld* world, GameRenderer* re
 	render->text.renderText(ti);
 #endif
 
-	InventoryItem *current = player->getCharacter()->getActiveItem();
+	InventoryItem* current = player->getCharacter()->getActiveItem();
 	std::string itemTextureName = "fist";
 	if (current) {
 		uint16_t model = current->getModelID();
 		if (model > 0) {
-			ObjectDataPtr weaponData = world
-					->data
-					->findObjectType<ObjectData>(model);
+			ObjectDataPtr weaponData =
+			    world->data->findObjectType<ObjectData>(model);
 			if (weaponData != nullptr) {
 				itemTextureName = weaponData->modelName;
 			}
@@ -164,39 +164,41 @@ void drawPlayerInfo(PlayerController* player, GameWorld* world, GameRenderer* re
 		itemTextureName = "pistol";
 	}
 
-	TextureData::Handle itemTexture = render->getData()->findTexture(itemTextureName);
+	TextureData::Handle itemTexture =
+	    render->getData()->findTexture(itemTextureName);
 	RW_CHECK(itemTexture != nullptr, "Item has 0 texture");
 	if (itemTexture != nullptr) {
 		RW_CHECK(itemTexture->getName() != 0, "Item has 0 texture");
-		render->drawTexture(itemTexture.get(),
-							glm::vec4(iconX,
-									  iconY,
-									  ui_weaponSize,
-									  ui_weaponSize));
+		render->drawTexture(
+		    itemTexture.get(),
+		    glm::vec4(iconX, iconY, ui_weaponSize, ui_weaponSize));
 	}
 
 	if (current) {
 		WeaponItem* wep = static_cast<WeaponItem*>(current);
 		if (wep->getWeaponData()->fireType != WeaponData::MELEE) {
-			const CharacterState& cs = player->getCharacter()->getCurrentState();
+			const CharacterState& cs =
+			    player->getCharacter()->getCurrentState();
 			const CharacterWeaponSlot& slotInfo = cs.weapons[cs.currentWeapon];
-			ti.text = std::to_string(slotInfo.bulletsClip) + "-"
-					+ std::to_string(slotInfo.bulletsTotal);
+			ti.text = std::to_string(slotInfo.bulletsClip) + "-" +
+			          std::to_string(slotInfo.bulletsTotal);
 
 			ti.baseColour = ui_shadowColour;
 			ti.font = 2;
 			ti.size = ui_ammoSize;
 			ti.align = TextRenderer::TextInfo::Center;
-			ti.screenPosition = glm::vec2(iconX + ui_weaponSize / 2.f,
-										  iconY + ui_weaponSize - ui_ammoHeight);
+			ti.screenPosition =
+			    glm::vec2(iconX + ui_weaponSize / 2.f,
+			              iconY + ui_weaponSize - ui_ammoHeight);
 			render->text.renderText(ti);
 		}
 	}
 }
 
-void drawHUD(ViewCamera& currentView, PlayerController* player, GameWorld* world, GameRenderer* render)
+void drawHUD(ViewCamera& currentView, PlayerController* player,
+             GameWorld* world, GameRenderer* render)
 {
-	if(player && player->getCharacter()) {
+	if (player && player->getCharacter()) {
 		drawMap(currentView, player, world, render);
 		drawPlayerInfo(player, world, render);
 	}
@@ -205,24 +207,22 @@ void drawHUD(ViewCamera& currentView, PlayerController* player, GameWorld* world
 void drawOnScreenText(GameWorld* world, GameRenderer* renderer)
 {
 	const auto vp = glm::vec2(renderer->getRenderer()->getViewport());
-	
+
 	TextRenderer::TextInfo ti;
 	ti.font = 2;
-	ti.screenPosition = glm::vec2( 10.f, 10.f );
+	ti.screenPosition = glm::vec2(10.f, 10.f);
 	ti.size = 20.f;
 
 	auto& alltext = world->state->text.getAllText();
 
-	for(auto& l : alltext)
-	{
-		for (auto& t : l)
-		{
+	for (auto& l : alltext) {
+		for (auto& t : l) {
 			ti.size = t.size;
 			ti.font = t.font;
 			ti.text = t.text;
 			ti.wrapX = t.wrapX;
-			ti.screenPosition = (t.position/glm::vec2(640.f, 480.f)) * vp;
-			switch(t.alignment) {
+			ti.screenPosition = (t.position / glm::vec2(640.f, 480.f)) * vp;
+			switch (t.alignment) {
 			case 0:
 				ti.align = TextRenderer::TextInfo::Left;
 				break;
@@ -235,9 +235,9 @@ void drawOnScreenText(GameWorld* world, GameRenderer* renderer)
 			}
 
 			// Check for the background type
-			if (t.colourBG.a == 0)
-			{
-				glm::vec2 shadowPosition((int8_t)t.colourBG.x, (int8_t)t.colourBG.y);
+			if (t.colourBG.a == 0) {
+				glm::vec2 shadowPosition((int8_t)t.colourBG.x,
+				                         (int8_t)t.colourBG.y);
 
 				ti.baseColour = glm::vec3(0.f);
 				ti.screenPosition += shadowPosition;
@@ -246,9 +246,7 @@ void drawOnScreenText(GameWorld* world, GameRenderer* renderer)
 				renderer->text.renderText(ti, true);
 
 				ti.screenPosition -= shadowPosition;
-			}
-			else if(t.colourBG.a > 0)
-			{
+			} else if (t.colourBG.a > 0) {
 				ti.backgroundColour = t.colourBG;
 			}
 

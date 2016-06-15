@@ -1,21 +1,18 @@
 #include <gl/GeometryBuffer.hpp>
 
-GeometryBuffer::GeometryBuffer()
- : vbo(0), num(0)
-{
-
-}
+GeometryBuffer::GeometryBuffer() : vbo(0), num(0) {}
 
 GeometryBuffer::~GeometryBuffer()
 {
-	if(vbo != 0) {
+	if (vbo != 0) {
 		glDeleteBuffers(1, &vbo);
 	}
 }
 
-void GeometryBuffer::uploadVertices(GLsizei num, GLsizeiptr size, const GLvoid* mem)
+void GeometryBuffer::uploadVertices(GLsizei num, GLsizeiptr size,
+                                    const GLvoid* mem)
 {
-	if(vbo == 0) {
+	if (vbo == 0) {
 		glGenBuffers(1, &vbo);
 	}
 	this->num = num;

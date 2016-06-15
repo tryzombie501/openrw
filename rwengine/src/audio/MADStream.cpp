@@ -33,7 +33,7 @@ mad_flow MADStream::ms_input(void* user, mad_stream* stream)
 {
 	MADStream* self = static_cast<MADStream*>(user);
 
-	if ( ! self->mReadProgress ) {
+	if (!self->mReadProgress) {
 		return MAD_FLOW_STOP;
 	}
 
@@ -45,7 +45,8 @@ mad_flow MADStream::ms_input(void* user, mad_stream* stream)
 	return MAD_FLOW_CONTINUE;
 }
 
-mad_flow MADStream::ms_output(void* user, mad_header const* header, mad_pcm* pcm)
+mad_flow MADStream::ms_output(void* user, mad_header const* header,
+                              mad_pcm* pcm)
 {
 	RW_UNUSED(header);
 
@@ -55,24 +56,28 @@ mad_flow MADStream::ms_output(void* user, mad_header const* header, mad_pcm* pcm
 		return MAD_FLOW_STOP;
 	}
 
-	if ( ! self->numFreeBuffers) {
+	if (!self->numFreeBuffers) {
 		ALint buffersProcessed;
 		do {
 			/**
 			 * Sleep a bit while waiting for OpenAL buffers to become available.
-			 * The number is arbitrary and depends on the size of the buffer/audio samples,
-			 * as well as how quickly the computer can feed more buffers into OpenAL.
+			 * The number is arbitrary and depends on the size of the
+			 * buffer/audio samples,
+			 * as well as how quickly the computer can feed more buffers into
+			 * OpenAL.
 			 */
 			std::this_thread::sleep_for(std::chrono::milliseconds(20));
-			alGetSourcei(self->alSource, AL_BUFFERS_PROCESSED, &buffersProcessed);
+			alGetSourcei(self->alSource, AL_BUFFERS_PROCESSED,
+			             &buffersProcessed);
 		} while (buffersProcessed <= 0);
 
-		alCheck(alSourceUnqueueBuffers(self->alSource, buffersProcessed, self->unqueuedBuffers));
+		alCheck(alSourceUnqueueBuffers(self->alSource, buffersProcessed,
+		                               self->unqueuedBuffers));
 		self->numFreeBuffers += buffersProcessed;
 	}
 
 	int nsamples = pcm->length;
-	mad_fixed_t const *left, *right;
+	mad_fixed_t const* left, *right;
 
 	left = pcm->samples[0];
 	right = pcm->samples[1];
@@ -87,8 +92,12 @@ mad_flow MADStream::ms_output(void* user, mad_header const* header, mad_pcm* pcm
 		s++;
 	}
 
-	alCheck(alBufferData(self->buffers[self->currentBuffer], AL_FORMAT_STEREO16, self->mCurrentSamples.data(), self->mCurrentSamples.size() * sizeof(uint16_t), pcm->samplerate));
-	alCheck(alSourceQueueBuffers(self->alSource, 1, self->buffers + self->currentBuffer));
+	alCheck(alBufferData(self->buffers[self->currentBuffer], AL_FORMAT_STEREO16,
+	                     self->mCurrentSamples.data(),
+	                     self->mCurrentSamples.size() * sizeof(uint16_t),
+	                     pcm->samplerate));
+	alCheck(alSourceQueueBuffers(self->alSource, 1,
+	                             self->buffers + self->currentBuffer));
 
 	self->mCurrentSamples.clear();
 	self->currentBuffer++;
@@ -107,8 +116,7 @@ mad_flow MADStream::ms_error(void* user, mad_stream* stream, mad_frame* frame)
 	return MAD_FLOW_BREAK;
 }
 
-MADStream::MADStream()
-	: mFdm(nullptr)
+MADStream::MADStream() : mFdm(nullptr)
 {
 	alCheck(alGenBuffers(numALbuffers, buffers));
 	alCheck(alGenSources(1, &alSource));
@@ -143,15 +151,14 @@ bool MADStream::openFromFile(const std::string& loc)
 		return false;
 	}
 
-	mFdm = (unsigned char*) m;
+	mFdm = (unsigned char*)m;
 	mReadProgress = mStat.st_size;
 
-	mad_decoder_init(&mDecoder, this,
-		ms_input, ms_header, 0, ms_output, ms_error, 0);
+	mad_decoder_init(&mDecoder, this, ms_input, ms_header, 0, ms_output,
+	                 ms_error, 0);
 
-	new std::thread([&] () {
-		mad_decoder_run(&mDecoder, MAD_DECODER_MODE_SYNC);
-	});
+	new std::thread(
+	    [&]() { mad_decoder_run(&mDecoder, MAD_DECODER_MODE_SYNC); });
 
 	alCheck(alSourcef(alSource, AL_PITCH, 1));
 	alCheck(alSourcef(alSource, AL_GAIN, 1));
@@ -162,10 +169,7 @@ bool MADStream::openFromFile(const std::string& loc)
 	return true;
 }
 
-void MADStream::play()
-{
-	alCheck(alSourcePlay(alSource));
-}
+void MADStream::play() { alCheck(alSourcePlay(alSource)); }
 
 void MADStream::stop()
 {
