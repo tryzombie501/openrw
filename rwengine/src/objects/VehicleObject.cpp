@@ -28,7 +28,7 @@ VehicleObject::VehicleObject(GameWorld* engine, const glm::vec3& pos, const glm:
 	, dynamics(this)
 {
 	collision = new CollisionInstance;
-	if( collision->createPhysicsBody(this, data->modelName, nullptr, &info->handling) ) {
+	if (collision->createPhysicsBody(this, data->modelName, info->handling.mass)) {
 		for(size_t w = 0; w < info->wheels.size(); ++w) {
 			bool front = info->wheels[w].position.y > 0;
 			float maxPower = 0.f;

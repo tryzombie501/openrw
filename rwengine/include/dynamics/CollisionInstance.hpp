@@ -27,9 +27,9 @@ public:
 	~CollisionInstance();
 
 	bool createPhysicsBody(GameObject* object,
-						   const std::string &modelName,
-						   DynamicObjectData* dynamics = nullptr,
-						   VehicleHandlingInfo* handling = nullptr);
+	                       const std::string& modelName,
+	                       float mass,
+	                       bool uprootable = false);
 
 	btRigidBody *getBulletBody() const { return m_body; }
 

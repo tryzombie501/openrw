@@ -122,12 +122,18 @@ void InstanceObject::changeModel(std::shared_ptr<ObjectData> incoming)
 	object = incoming;
 
 	if( incoming ) {
-		auto bod = new CollisionInstance;
+		body = new CollisionInstance;
 
-		if( bod->createPhysicsBody(this, object->modelName, dynamics.get()) )
-		{
-			bod->getBulletBody()->setActivationState(ISLAND_SLEEPING);
-			body = bod;
+		bool canUproot = false;
+		float startMass = 0.f;
+		if (dynamics) {
+			canUproot = dynamics->uprootForce > 0.f;
+			startMass = canUproot ? 0.f : dynamics->mass;
+		}
+
+		if (body->createPhysicsBody(this, object->modelName, startMass,
+		                            canUproot)) {
+			body->getBulletBody()->setActivationState(ISLAND_SLEEPING);
 		}
 	}
 }

@@ -54,7 +54,10 @@ CollisionInstance::~CollisionInstance()
 	}
 }
 
-bool CollisionInstance::createPhysicsBody(GameObject *object, const std::string& modelName, DynamicObjectData *dynamics, VehicleHandlingInfo *handling)
+bool CollisionInstance::createPhysicsBody(GameObject* object,
+                                          const std::string& modelName,
+                                          float mass,
+                                          bool uprootable)
 {
 	auto phyit = object->engine->data->collisions.find(modelName);
 	if( phyit != object->engine->data->collisions.end()) {
@@ -118,21 +121,10 @@ bool CollisionInstance::createPhysicsBody(GameObject *object, const std::string&
 
 		m_collisionHeight = colMax - colMin;
 
-		if( dynamics ) {
-			if( dynamics->uprootForce > 0.f ) {
-				info.m_mass = 0.f;
-			}
-			else {
-				btVector3 inert;
-				cmpShape->calculateLocalInertia(dynamics->mass, inert);
-				info.m_mass = dynamics->mass;
-				info.m_localInertia = inert;
-			}
-		}
-		else if( handling ) {
+		info.m_mass = mass;
+		if (info.m_mass > 0.f) {
 			btVector3 inert;
-			cmpShape->calculateLocalInertia(handling->mass, inert);
-			info.m_mass = handling->mass;
+			cmpShape->calculateLocalInertia(mass, inert);
 			info.m_localInertia = inert;
 		}
 
@@ -140,13 +132,12 @@ bool CollisionInstance::createPhysicsBody(GameObject *object, const std::string&
 		m_body->setUserPointer(object);
 		object->engine->dynamicsWorld->addRigidBody(m_body);
 
-		if( dynamics && dynamics->uprootForce > 0.f ) {
-			m_body->setCollisionFlags(m_body->getCollisionFlags()
-									| btCollisionObject::CF_CUSTOM_MATERIAL_CALLBACK);
+		if (uprootable) {
+			m_body->setCollisionFlags(
+			    m_body->getCollisionFlags() |
+			    btCollisionObject::CF_CUSTOM_MATERIAL_CALLBACK);
 		}
-	}
-	else
-	{
+	} else {
 		return false;
 	}
 
