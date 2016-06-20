@@ -1173,6 +1173,9 @@ bool SaveGame::loadGame(GameState& state, const std::string& file)
 			glm::vec3(garage.x2, garage.y2, garage.z2),
 			garage.type
 		});
+
+		/// @todo This is only getting run for saved games
+		state.garages.back().findDoorObject(state.world);
 	}
 	for(int c = 0; c < 18; ++c) {
 		if(garageData.cars[c].modelId == 0) continue;

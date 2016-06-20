@@ -442,6 +442,9 @@ void RWGame::tick(float dt)
 			object->_updateLastTransform();
 			object->tick(dt);
 		}
+		for(size_t g = 0; g < state->garages.size(); ++g) {
+			state->garages[g].updateDoor(dt);
+		}
 		
 		world->destroyQueuedObjects();
 
@@ -726,6 +729,13 @@ void RWGame::renderDebugPaths(float time)
 		debug->drawLine(max, max - btVector3(0.5f, 0.f, 0.f), maxColor);
 		debug->drawLine(max, max - btVector3(0.f, 0.5f, 0.f), maxColor);
 		debug->drawLine(max, max - btVector3(0.f, 0.f, 0.5f), maxColor);
+
+		if (garage.doorObject) {
+			auto mid = (min+max)/2.f;
+			auto dp = garage.doorObject->getPosition();
+			auto door = btVector3(dp.x, dp.y, dp.z);
+			debug->drawLine(mid, door, maxColor);
+		}
 	}
 
 	debug->flush(renderer);

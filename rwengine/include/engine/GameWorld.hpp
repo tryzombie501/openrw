@@ -302,6 +302,19 @@ public:
 	void setPaused(bool pause);
 	bool isPaused() const;
 
+	enum /*ModelFlags*/
+	{
+		ModelNormal = 0,
+		ModelGarageDoor = 1,
+	};
+
+	static uint8_t getModelFlags(const std::string& model);
+
+	/**
+	 * Cache of objects that have non-zero model flags
+	 */
+	std::vector<GameObject*> specialModelInstances;
+
 private:
 
 	/**

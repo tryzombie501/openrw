@@ -36,6 +36,7 @@ public:
 	float getBoundingHeight() const { return m_collisionHeight; }
 
 	void changeMass(float newMass);
+	void changeKinematic(bool kinematic);
 
 private:
 	btRigidBody* m_body;

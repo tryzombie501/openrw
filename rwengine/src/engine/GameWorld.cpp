@@ -199,6 +199,11 @@ InstanceObject *GameWorld::createInstance(const uint16_t id, const glm::vec3& po
 			oi, nullptr, dydata
 		);
 
+		if (getModelFlags(oi->modelName) != ModelNormal) {
+			// Ensure that special model lookup is as fast as possible.
+			specialModelInstances.push_back(instance);
+		}
+
 		instancePool.insert(instance);
         allObjects.push_back(instance);
 
@@ -533,6 +538,11 @@ void GameWorld::destroyObject(GameObject* object)
 	if (it != allObjects.end()) {
 		allObjects.erase(it);
 	}
+	specialModelInstances.erase(
+				std::remove(
+					specialModelInstances.begin(),
+					specialModelInstances.end(),
+					object), specialModelInstances.end());
 
 	delete object;
 }
@@ -895,5 +905,54 @@ void GameWorld::setPaused(bool pause)
 bool GameWorld::isPaused() const
 {
 	return paused;
+}
+
+uint8_t GameWorld::getModelFlags(const std::string& model)
+{
+	auto flags = uint8_t(ModelNormal);
+
+	std::vector<std::string> garageDoorModels {
+				"8ballsuburbandoor",
+				"amcogaragedoor",
+				"bankjobdoor",
+				"bombdoor",
+				"crushercrush",
+				"crushertop",
+				"door2_garage",
+				"door3_garage",
+				"door4_garage",
+				"door_bombshop",
+				"door_col_compnd_01",
+				"door_col_compnd_02",
+				"door_col_compnd_03",
+				"door_col_compnd_04",
+				"door_col_compnd_05",
+				"door_jmsgrage",
+				"door_sfehousegrge",
+				"double_garage_dr",
+				"impex_door",
+				"impexpsubgrgdoor",
+				"ind_plyrwoor",
+				"ind_slidedoor",
+				"jamesgrge_kb",
+				"leveldoor2",
+				"oddjgaragdoor",
+				"plysve_gragedoor",
+				"SalvGarage",
+				"shedgaragedoor",
+				"Sub_sprayshopdoor",
+				"towergaragedoor1",
+				"towergaragedoor2",
+				"towergaragedoor3",
+				"vheistlocdoor"
+	};
+
+	if (std::find(garageDoorModels.begin(),
+				  garageDoorModels.end(),
+				  model) != garageDoorModels.end()) {
+		flags |= ModelGarageDoor;
+	}
+
+	return flags;
 }
 

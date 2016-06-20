@@ -258,6 +258,26 @@ struct GarageInfo
 	glm::vec3 min;
 	glm::vec3 max;
 	int type;
+	/**
+	 * Door object for this garage
+	 */
+	GameObject* doorObject;
+	bool open;
+	glm::vec3 closedDoorPosition;
+	glm::vec3 openDoorPosition;
+
+	GarageInfo(const glm::vec3& min_, const glm::vec3& max_,
+			   int type_)
+		: min(min_)
+		, max(max_)
+		, type(type_)
+		, doorObject(nullptr)
+		, open(false)
+	{
+	}
+
+	void findDoorObject(GameWorld* world);
+	void updateDoor(float dt);
 };
 
 /**

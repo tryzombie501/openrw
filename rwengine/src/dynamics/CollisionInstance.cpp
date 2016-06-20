@@ -154,3 +154,13 @@ void CollisionInstance::changeMass(float newMass)
 	m_body->setMassProps(newMass, inert);
 	dynamicsWorld->addRigidBody(m_body);
 }
+
+void CollisionInstance::changeKinematic(bool kinematic)
+{
+	if (kinematic) {
+		m_body->setCollisionFlags(m_body->getCollisionFlags() |
+		                          btCollisionObject::CF_KINEMATIC_OBJECT);
+		m_body->setActivationState(DISABLE_DEACTIVATION);
+		changeMass(0.f);
+	}
+}

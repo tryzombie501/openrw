@@ -1,4 +1,7 @@
 #include <engine/GameState.hpp>
+#include <engine/GameWorld.hpp>
+#include <objects/InstanceObject.hpp>
+#include <dynamics/CollisionInstance.hpp>
 
 BasicState::BasicState()
 	: saveName { "" }
@@ -144,5 +147,47 @@ void GameState::removeBlip(int blip)
 	if ( it != radarBlips.end() )
 	{
 		radarBlips.erase(it);
+	}
+}
+
+void GarageInfo::findDoorObject(GameWorld* world)
+{
+	auto mid = (min+max)/2.f;
+	auto closest = std::numeric_limits<float>::max();
+	for (auto& obj : world->specialModelInstances) {
+		auto distance = glm::distance2(obj->getPosition(), mid);
+		if (closest > distance) {
+			closest = distance;
+			doorObject = obj;
+			closedDoorPosition = obj->getPosition();
+		}
+	}
+	if (doorObject) {
+		auto height = doorObject->model->resource->getBoundingRadius();
+		openDoorPosition = closedDoorPosition + glm::vec3(0.f, 0.f, height);
+		static_cast<InstanceObject*>(doorObject)->body->changeKinematic(true);
+	}
+}
+
+void GarageInfo::updateDoor(float dt)
+{
+	if (! doorObject)
+		return;
+
+	constexpr float kDoorMoveSpeed = 1.f;
+	float maxDist = kDoorMoveSpeed * dt;
+	const auto& targetPos = open ? openDoorPosition : closedDoorPosition;
+
+	auto pdelta = targetPos - doorObject->getPosition();
+	const auto dist2 = glm::length2(pdelta);
+	if (dist2 > (maxDist*maxDist)) {
+		auto dir = glm::normalize(pdelta);
+		doorObject->setPosition(doorObject->getPosition() + dir * maxDist);
+	}
+	else if (dist2 < 0.001f) {
+		open = !open;
+	}
+	else {
+		doorObject->setPosition(targetPos);
 	}
 }
