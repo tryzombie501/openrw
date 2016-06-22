@@ -1,12 +1,15 @@
 #ifndef _GAME_STATE_HPP_
 #define _GAME_STATE_HPP_
+#include <render/ViewCamera.hpp>
+#include <engine/TimestepInfo.hpp>
+#include "MenuSystem.hpp"
+#include "GameWindow.hpp"
+
+#include <SDL2/SDL.h>
+#include <glm/gtc/quaternion.hpp>
+
 #include <functional>
 #include <queue>
-#include <render/ViewCamera.hpp>
-#include "MenuSystem.hpp"
-#include <glm/gtc/quaternion.hpp>
-#include <SDL2/SDL.h>
-#include "GameWindow.hpp"
 
 class RWGame;
 class GameWorld;
@@ -25,10 +28,11 @@ struct State
 	virtual void enter() = 0;
 	virtual void exit() = 0;
 	
-	virtual void tick(float dt) = 0;
+	virtual void tick(const TimestepInfo& dt) = 0;
 	
-	virtual void draw(GameRenderer* r)
+	virtual void draw(GameRenderer* r, const TimestepInfo& ts)
 	{
+		RW_UNUSED(ts);
 		if(getCurrentMenu()) {
 			getCurrentMenu()->draw(r);
 		}
@@ -93,14 +97,14 @@ struct StateManager
 		enter(state);
 	}
 	
-	void tick(float dt)
+	void tick(const TimestepInfo& dt)
 	{
 		states.back()->tick(dt);
 	}
 	
-	void draw(GameRenderer* r)
+	void draw(GameRenderer* r, const TimestepInfo& ts)
 	{
-		states.back()->draw(r);
+		states.back()->draw(r, ts);
 	}
 	
 	void exit()

@@ -24,7 +24,7 @@ void LoadingState::exit()
 
 }
 
-void LoadingState::tick(float dt)
+void LoadingState::tick(const TimestepInfo& dt)
 {
 	// If background work is completed, switch to the next state
 	if( getWorld()->_work->isEmpty() ) {
@@ -47,7 +47,7 @@ void LoadingState::handleEvent(const SDL_Event& e)
 	State::handleEvent(e);
 }
 
-void LoadingState::draw(GameRenderer* r)
+void LoadingState::draw(GameRenderer* r, const TimestepInfo& ts)
 {
 	// Display some manner of loading screen.
 	TextRenderer::TextInfo ti;

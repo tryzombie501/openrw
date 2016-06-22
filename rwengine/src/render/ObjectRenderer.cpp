@@ -193,7 +193,8 @@ void ObjectRenderer::renderInstance(InstanceObject *instance,
 		return;
 	}
 
-	auto matrixModel = instance->getTimeAdjustedTransform(m_renderAlpha);
+	/// @todo physics branch improves transform
+	auto matrixModel = instance->getTimeAdjustedTransform(1.f);
 
 	float mindist = glm::length(instance->getPosition()-m_camera.position)
 			- instance->model->resource->getBoundingRadius();
@@ -222,7 +223,7 @@ void ObjectRenderer::renderInstance(InstanceObject *instance,
 				}
 				else if (instance->LODinstance->model->resource) {
 					// The model matrix needs to be for the LOD instead
-					matrixModel = instance->LODinstance->getTimeAdjustedTransform(m_renderAlpha);
+					matrixModel = instance->LODinstance->getTimeAdjustedTransform(1.f);
 					// If the object is only just out of range, keep
 					// rendering it and screen-door the LOD.
 					if (overlap < fadeRange)
@@ -298,7 +299,7 @@ void ObjectRenderer::renderInstance(InstanceObject *instance,
 void ObjectRenderer::renderCharacter(CharacterObject *pedestrian,
 									 RenderList& outList)
 {
-	glm::mat4 matrixModel = pedestrian->getTimeAdjustedTransform( m_renderAlpha );
+	glm::mat4 matrixModel = pedestrian->getTimeAdjustedTransform(1.f);
 
 	if(!pedestrian->model->resource) return;
 
@@ -363,7 +364,7 @@ void ObjectRenderer::renderVehicle(VehicleObject *vehicle,
 		return;
 	}
 
-	glm::mat4 matrixModel = vehicle->getTimeAdjustedTransform( m_renderAlpha );
+	glm::mat4 matrixModel = vehicle->getTimeAdjustedTransform(1.f);
 
 	renderFrame(vehicle->model->resource,
 				vehicle->model->resource->frames[0],
@@ -523,7 +524,7 @@ void ObjectRenderer::renderCutsceneObject(CutsceneObject *cutscene,
 void ObjectRenderer::renderProjectile(ProjectileObject *projectile,
 									  RenderList& outList)
 {
-	glm::mat4 modelMatrix = projectile->getTimeAdjustedTransform(m_renderAlpha);
+	glm::mat4 modelMatrix = projectile->getTimeAdjustedTransform(1.f);
 
 	auto odata = m_world->data->findObjectType<ObjectData>(projectile->getProjectileInfo().weapon->modelID);
 	auto weapons = m_world->data->models["weapons"];
@@ -549,7 +550,7 @@ void ObjectRenderer::buildRenderList(GameObject* object, RenderList& outList)
 {
 	if( object->skeleton )
 	{
-		object->skeleton->interpolate(m_renderAlpha);
+		object->skeleton->interpolate(1.f);
 	}
 
 	// Right now specialized on each object type

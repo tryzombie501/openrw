@@ -9,15 +9,15 @@ class MenuState : public State
 public:
 	MenuState(RWGame* game);
 
-	virtual void enter();
-	virtual void exit();
+	void enter() override;
+	void exit() override;
 
-	virtual void tick(float dt);
+	void tick(const TimestepInfo& dt) override;
 
-	virtual void enterMainMenu();
-	virtual void enterLoadMenu();
+	void enterMainMenu();
+	void enterLoadMenu();
 
-	virtual void handleEvent(const SDL_Event& event);
+	void handleEvent(const SDL_Event& event) override;
 };
 
 #endif // MENUSTATE_HPP

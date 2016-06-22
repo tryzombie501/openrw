@@ -79,7 +79,6 @@ GameRenderer::GameRenderer(Logger* log, GameData* _data)
 	: data(_data)
 	, logger(log)
 	, renderer(new OpenGLRenderer)
-	, _renderAlpha(0.f)
 	, _renderWorld(nullptr)
 	, cullOverride(false)
 	, map(renderer, _data)
@@ -258,9 +257,8 @@ void GameRenderer::setupRender()
 	glClear(GL_DEPTH_BUFFER_BIT|GL_COLOR_BUFFER_BIT);
 }
 
-void GameRenderer::renderWorld(GameWorld* world, const ViewCamera &camera, float alpha)
+void GameRenderer::renderWorld(GameWorld* world, const ViewCamera &camera, const TimestepInfo& ts)
 {
-	_renderAlpha = alpha;
 	_renderWorld = world;
 
 	// Store the input camera,
@@ -336,9 +334,8 @@ void GameRenderer::renderWorld(GameWorld* world, const ViewCamera &camera, float
 	RW_PROFILE_BEGIN("Build");
 
 	ObjectRenderer objectRenderer(_renderWorld,
-					  (cullOverride ? cullingCamera : _camera),
-					  _renderAlpha,
-					  getMissingTexture());
+	                              (cullOverride ? cullingCamera : _camera), ts,
+	                              getMissingTexture());
 
 	// World Objects
 	for (auto object : world->allObjects) {
@@ -384,7 +381,8 @@ void GameRenderer::renderWorld(GameWorld* world, const ViewCamera &camera, float
 					auto object = world->getBlipTarget(blip.second);
 					if( object )
 					{
-						model = object->getTimeAdjustedTransform( _renderAlpha );
+						/// @todo physics branch will allow removal
+						model = object->getTimeAdjustedTransform( 1.f );
 					}
 				}
 				else

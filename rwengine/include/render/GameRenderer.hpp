@@ -1,6 +1,7 @@
 #ifndef _GAMERENDERER_HPP_
 #define _GAMERENDERER_HPP_
 #include <rw/defines.hpp>
+#include <engine/TimestepInfo.hpp>
 
 class Logger;
 
@@ -75,7 +76,6 @@ class GameRenderer
 	bool renderFrame(Model* m, ModelFrame* f, const glm::mat4& matrix, GameObject* object, float opacity, bool queueTransparent = true);
 
 	// Temporary variables used during rendering
-	float _renderAlpha;
 	GameWorld* _renderWorld;
 
 	/** Internal non-descript VAOs */
@@ -132,7 +132,7 @@ public:
 	 *  - draws water surfaces
 	 *  - draws the skybox
      */
-	void renderWorld(GameWorld* world, const ViewCamera &camera, float alpha);
+	void renderWorld(GameWorld* world, const ViewCamera &camera, const TimestepInfo& ts);
 	
 	/**
 	 * Renders the effects (Particles, Lighttrails etc)

@@ -108,9 +108,9 @@ void IngameState::exit()
 
 }
 
-void IngameState::tick(float dt)
+void IngameState::tick(const TimestepInfo& dt)
 {
-	autolookTimer = std::max(autolookTimer - dt, 0.f);
+	autolookTimer = std::max(autolookTimer - dt.getServerTimestep(), 0.f);
 
 	auto player = game->getPlayer();
 	if( player && player->isInputEnabled() )
@@ -184,8 +184,14 @@ void IngameState::tick(float dt)
 				if (glm::abs(deltaYaw) > glm::pi<float>()) {
 					deltaYaw -= glm::sign(deltaYaw) * glm::pi<float>()*2.f;
 				}
-				m_cameraAngles.x += glm::sign(deltaYaw) * std::min(kMaxRotationRate * dt, glm::abs(deltaYaw));
-				m_cameraAngles.y += glm::sign(deltaPitch) * std::min(kMaxRotationRate * dt, glm::abs(deltaPitch));
+				m_cameraAngles.x +=
+				    glm::sign(deltaYaw) *
+				    std::min(kMaxRotationRate * dt.getServerTimestep(),
+				             glm::abs(deltaYaw));
+				m_cameraAngles.y +=
+				    glm::sign(deltaPitch) *
+				    std::min(kMaxRotationRate * dt.getServerTimestep(),
+				             glm::abs(deltaPitch));
 			}
 		}
 
@@ -214,7 +220,7 @@ void IngameState::tick(float dt)
 			float innerDist = viewDistance * 0.1f;
 			correction = glm::min(0.f, correction + innerDist);
 		}
-		cameraPosition += dir * 10.f * correction * dt;
+		cameraPosition += dir * 10.f * correction * dt.getServerTimestep();
 
 		auto lookdir = glm::normalize(lookTargetPosition - cameraPosition);
 		// Calculate the yaw to look at the target.
@@ -275,14 +281,14 @@ void IngameState::tick(float dt)
 	}
 }
 
-void IngameState::draw(GameRenderer* r)
+void IngameState::draw(GameRenderer* r, const TimestepInfo& ts)
 {
 	if( !getWorld()->state->isCinematic && getWorld()->isCutsceneDone() )
 	{
 		drawHUD(_look, game->getPlayer(), getWorld(), r);
 	}
 	
-    State::draw(r);
+    State::draw(r, ts);
 }
 
 void IngameState::handleEvent(const SDL_Event& event)

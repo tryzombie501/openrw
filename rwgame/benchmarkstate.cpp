@@ -70,7 +70,7 @@ void BenchmarkState::exit()
 			  << " (" << (frameCounter/duration) << " fps)" << std::endl;
 }
 
-void BenchmarkState::tick(float dt)
+void BenchmarkState::tick(const TimestepInfo& dt)
 {
 	if (track.size() > 0)
 	{
@@ -94,14 +94,14 @@ void BenchmarkState::tick(float dt)
 			trackCam.position = glm::mix(a.position, b.position, alpha);
 			trackCam.rotation = glm::slerp(a.angle, b.angle, alpha);
 		}
-		benchmarkTime += dt;
+		benchmarkTime += dt.getServerTimestep();
 	}
 }
 
-void BenchmarkState::draw(GameRenderer* r)
+void BenchmarkState::draw(GameRenderer* r, const TimestepInfo& ts)
 {
 	frameCounter++;
-	State::draw(r);
+	State::draw(r, ts);
 }
 
 void BenchmarkState::handleEvent(const SDL_Event& e)

@@ -12,11 +12,11 @@ public:
 	virtual void enter();
 	virtual void exit();
 
-	virtual void tick(float dt);
+	void tick(const TimestepInfo& dt) override;
 	
-    virtual void draw(GameRenderer* r);
+    void draw(GameRenderer* , const TimestepInfo&) override;
 
-	virtual void handleEvent(const SDL_Event& event);
+	void handleEvent(const SDL_Event& event) override;
 };
 
 #endif // PAUSESTATE_HPP

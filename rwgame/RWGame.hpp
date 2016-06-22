@@ -5,6 +5,7 @@
 #include <engine/GameData.hpp>
 #include <engine/GameWorld.hpp>
 #include <render/GameRenderer.hpp>
+#include <engine/TimestepInfo.hpp>
 #include <script/ScriptMachine.hpp>
 #include <chrono>
 #include "game.hpp"
@@ -45,6 +46,7 @@ class RWGame
 
 	float accum;
 	float timescale;
+	TimestepInfo m_timestep;
 public:
 
 	RWGame(int argc, char* argv[]);
@@ -133,11 +135,11 @@ public:
 	PlayerController* getPlayer();
 
 private:
-	void tick(float dt);
-	void render(float alpha, float dt);
+	void tick(const TimestepInfo& dt);
+	void render(const TimestepInfo& dt);
 	
-	void renderDebugStats(float time, Renderer::ProfileInfo& worldRenderTime);
-	void renderDebugPaths(float time);
+	void renderDebugStats(const TimestepInfo& ts, Renderer::ProfileInfo& worldRenderTime);
+	void renderDebugPaths();
 	void renderProfile();
 
 	void globalKeyEvent(const SDL_Event& event);

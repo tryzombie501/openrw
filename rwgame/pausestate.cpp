@@ -26,12 +26,12 @@ void PauseState::exit()
 	getWorld()->setPaused(false);
 }
 
-void PauseState::tick(float dt)
+void PauseState::tick(const TimestepInfo& dt)
 {
 
 }
 
-void PauseState::draw(GameRenderer* r)
+void PauseState::draw(GameRenderer* r, const TimestepInfo& ts)
 {
 	MapRenderer::MapInfo map;
 
@@ -44,7 +44,7 @@ void PauseState::draw(GameRenderer* r)
 
 	game->getRenderer()->map.draw(getWorld(), map);
 
-    State::draw(r);
+    State::draw(r, ts);
 }
 
 void PauseState::handleEvent(const SDL_Event& e)

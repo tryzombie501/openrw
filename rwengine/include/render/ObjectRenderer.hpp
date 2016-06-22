@@ -7,6 +7,7 @@
 #include <render/OpenGLRenderer.hpp>
 #include <objects/GameObject.hpp>
 #include <engine/GameWorld.hpp>
+#include <engine/TimestepInfo.hpp>
 #include <gl/DrawBuffer.hpp>
 
 class ProjectileObject;
@@ -23,11 +24,11 @@ class ObjectRenderer
 public:
 	ObjectRenderer(GameWorld* world,
 				   const ViewCamera& camera,
-				   float renderAlpha,
+				   const TimestepInfo& timestep,
 				   GLuint errorTexture)
 		: m_world (world)
 		, m_camera(camera)
-		, m_renderAlpha(renderAlpha)
+		, m_timestep(timestep)
 		, m_errorTexture(errorTexture)
 	{ }
 
@@ -41,7 +42,7 @@ public:
 private:
 	GameWorld* m_world;
 	const ViewCamera& m_camera;
-	float m_renderAlpha;
+	const TimestepInfo& m_timestep;
 	GLuint m_errorTexture;
 
 	void renderInstance(InstanceObject *instance, RenderList& outList);

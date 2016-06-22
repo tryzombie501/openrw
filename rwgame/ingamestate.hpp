@@ -47,18 +47,18 @@ public:
 	void startTest();
 	void startGame();
 
-	virtual void enter();
-	virtual void exit();
+	void enter() override;
+	void exit() override;
 
-	virtual void tick(float dt);
-    virtual void draw(GameRenderer* r);
+	void tick(const TimestepInfo& dt) override;
+	void draw(GameRenderer* r, const TimestepInfo& ts) override;
 
-	virtual void handleEvent(const SDL_Event& event);
-	virtual void handlePlayerInput(const SDL_Event& event);
+	void handleEvent(const SDL_Event& event) override;
+	void handlePlayerInput(const SDL_Event& event);
 
-	virtual bool shouldWorldUpdate();
+	bool shouldWorldUpdate() override;
 
-	const ViewCamera& getCamera();
+	const ViewCamera& getCamera() override;
 };
 
 #endif // INGAMESTATE_HPP

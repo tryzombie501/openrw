@@ -323,7 +323,7 @@ void DebugState::exit()
 
 }
 
-void DebugState::tick(float dt)
+void DebugState::tick(const TimestepInfo& dt)
 {
 	/*if(debugObject) {
 		auto p = debugObject->getPosition();
@@ -357,11 +357,13 @@ void DebugState::tick(float dt)
 		_debugCam.rotation = glm::angleAxis(_debugLook.x, glm::vec3(0.f, 0.f, 1.f))
 			* glm::angleAxis(_debugLook.y, glm::vec3(0.f, 1.f, 0.f));
 
-		_debugCam.position += _debugCam.rotation * _movement * dt * (_sonicMode ? 1000.f : 100.f);
+		_debugCam.position += _debugCam.rotation * _movement *
+		                      dt.getServerTimestep() *
+		                      (_sonicMode ? 1000.f : 100.f);
 	}
 }
 
-void DebugState::draw(GameRenderer* r)
+void DebugState::draw(GameRenderer* r, const TimestepInfo& ts)
 {
 	// Draw useful information like camera position.
 	std::stringstream ss;
@@ -375,7 +377,7 @@ void DebugState::draw(GameRenderer* r)
 	ti.baseColour = glm::u8vec3(255);
 	r->text.renderText(ti);
 
-	State::draw(r);
+	State::draw(r, ts);
 }
 
 void DebugState::handleEvent(const SDL_Event& event)

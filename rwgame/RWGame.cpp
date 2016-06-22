@@ -27,6 +27,8 @@
 #include <objects/VehicleObject.hpp>
 
 #define MOUSE_SENSITIVITY_SCALE 2.5f
+constexpr float kGameTimestep = 1.f/30.f;
+constexpr int kMaxIterations = 5;
 
 DebugDraw* debug;
 
@@ -34,10 +36,18 @@ StdOutReciever logPrinter;
 
 RWGame::RWGame(int argc, char* argv[])
 	: config("openrw.ini")
-	, state(nullptr), world(nullptr), renderer(nullptr), script(nullptr),
-	debugScript(false), inFocus(true),
-	showDebugStats(false), showDebugPaths(false), showDebugPhysics(false),
-	accum(0.f), timescale(1.f)
+	, state(nullptr)
+	, world(nullptr)
+	, renderer(nullptr)
+	, script(nullptr)
+	, debugScript(false)
+	, inFocus(true)
+	, showDebugStats(false)
+	, showDebugPaths(false)
+	, showDebugPhysics(false)
+	, accum(0.f)
+	, timescale(1.f)
+	, m_timestep(kGameTimestep)
 {
 	if (!config.isValid())
 	{
@@ -84,6 +94,9 @@ RWGame::RWGame(int argc, char* argv[])
 		if( strcmp( "--benchmark", argv[i]) == 0 && i+1 < argc )
 		{
 			benchFile = argv[i+1];
+		}
+		if (strcmp("--timestep", argv[i]) == 0 && i + 1 < argc) {
+			m_timestep.setServerTimestep(atof(argv[i+1]));
 		}
 	}
 
@@ -339,12 +352,13 @@ int RWGame::run()
 		auto now = clock.now();
 		float timer = std::chrono::duration<float>(now - last_clock_time).count();
 		last_clock_time = now;
-		accum += timer * timescale;
+		accum = std::min(accum + timer * timescale, m_timestep.getServerTimestep() * kMaxIterations);
+		m_timestep.setClientTimestep(timer);
 
 		RW_PROFILE_BEGIN("Update");
-		if ( accum >= GAME_TIMESTEP ) {
+		while ( accum >= m_timestep.getServerTimestep() ) {
 			RW_PROFILE_BEGIN("state");
-			StateManager::get().tick(GAME_TIMESTEP);
+			StateManager::get().tick(m_timestep);
 			RW_PROFILE_END();
 
 			if (StateManager::get().states.size() == 0) {
@@ -352,33 +366,23 @@ int RWGame::run()
 			}
 
 			RW_PROFILE_BEGIN("engine");
-			tick(GAME_TIMESTEP);
+			tick(m_timestep);
 			RW_PROFILE_END();
 			
-			accum -= GAME_TIMESTEP;
-			
-			// Throw away time if the accumulator reaches too high.
-			if ( accum > GAME_TIMESTEP * 5.f )
-			{
-				accum = 0.f;
-			}
+			accum -= m_timestep.getServerTimestep();
 		}
 		RW_PROFILE_END();
 
-		float alpha = fmod(accum, GAME_TIMESTEP) / GAME_TIMESTEP;
-		if( ! state->shouldWorldUpdate() )
-		{
-			alpha = 1.f;
-		}
+		/// @todo have a paused and unpaused client timestep
 
 		RW_PROFILE_BEGIN("Render");
 		RW_PROFILE_BEGIN("engine");
-		render(alpha, timer);
+		render(m_timestep);
 		RW_PROFILE_END();
 
 		RW_PROFILE_BEGIN("state");
 		if (StateManager::get().states.size() > 0) {
-			StateManager::get().draw(renderer);
+			StateManager::get().draw(renderer, m_timestep);
 		}
 		RW_PROFILE_END();
 		RW_PROFILE_END();
@@ -396,35 +400,35 @@ int RWGame::run()
 	return 0;
 }
 
-void RWGame::tick(float dt)
+void RWGame::tick(const TimestepInfo& dt)
 {
 	// Process the Engine's background work.
 	world->_work->update();
 	
 	State* currState = StateManager::get().states.back();
 
-	world->chase.update(dt);
+	world->chase.update(dt.getServerTimestep());
 	
 	static float clockAccumulator = 0.f;
 	if ( currState->shouldWorldUpdate() ) {
 		// Clear out any per-tick state.
 		world->clearTickData();
 
-		state->gameTime += dt;
+		state->gameTime += m_timestep.getServerTimestep();
 
-		clockAccumulator += dt;
-		while( clockAccumulator >= 1.f ) {
-			world->state->basic.gameMinute ++;
-			while( state->basic.gameMinute >= 60 ) {
+		clockAccumulator += m_timestep.getServerTimestep();
+		while (clockAccumulator >= 1.f) {
+			world->state->basic.gameMinute++;
+			while (state->basic.gameMinute >= 60) {
 				state->basic.gameMinute = 0;
-				state->basic.gameHour ++;
-				while( state->basic.gameHour >= 24 ) {
+				state->basic.gameHour++;
+				while (state->basic.gameHour >= 24) {
 					state->basic.gameHour = 0;
 				}
 			}
 			clockAccumulator -= 1.f;
 		}
-		
+
 		// Clean up old VisualFX
 		for( int i = 0; i < world->effects.size(); ++i )
 		{
@@ -441,20 +445,22 @@ void RWGame::tick(float dt)
 			}
 		}
 
+		/// @todo don't update everything
 		for( auto& object : world->allObjects ) {
 			object->_updateLastTransform();
-			object->tick(dt);
+			object->tick(dt.getServerTimestep());
 		}
 		
 		world->destroyQueuedObjects();
 
-		state->text.tick(dt);
+		state->text.tick(dt.getServerTimestep());
 
-		world->dynamicsWorld->stepSimulation(dt, 2, dt);
+		/// @todo allow bullet to manage the physics timestep itself
+		world->dynamicsWorld->stepSimulation(dt.getServerTimestep(), 2, dt.getServerTimestep());
 		
 		if( script ) {
 			try {
-				script->execute(dt);
+				script->execute(dt.getServerTimestep());
 			}
 			catch( SCMException& ex ) {
 				std::cerr << ex.what() << std::endl;
@@ -477,7 +483,7 @@ void RWGame::tick(float dt)
 	nextCam = currState->getCamera();
 }
 
-void RWGame::render(float alpha, float time)
+void RWGame::render(const TimestepInfo& time)
 {
 	lastDraws = getRenderer()->getRenderer()->getDrawCount();
 	
@@ -493,7 +499,7 @@ void RWGame::render(float alpha, float time)
 		auto cutscene = state->currentCutscene;
 		float cutsceneTime = std::min(world->getGameTime() - state->cutsceneStartTime,
 									  cutscene->tracks.duration);
-		cutsceneTime += GAME_TIMESTEP * alpha;
+		cutsceneTime += time.getClientTimestep();
 		glm::vec3 cameraPos = cutscene->tracks.getPositionAt(cutsceneTime),
 				targetPos = cutscene->tracks.getTargetAt(cutsceneTime);
 		float zoom = cutscene->tracks.getZoomAt(cutsceneTime);
@@ -533,8 +539,8 @@ void RWGame::render(float alpha, float time)
 	else
 	{
 		// There's no cutscene playing - use the camera returned by the State.
-		viewCam.position = glm::mix(lastCam.position, nextCam.position, alpha);
-		viewCam.rotation = glm::slerp(lastCam.rotation, nextCam.rotation, alpha);
+		viewCam.position = nextCam.position;
+		viewCam.rotation = nextCam.rotation;
 	}
 
 	viewCam.frustum.aspectRatio = windowSize.x / static_cast<float>(windowSize.y);
@@ -550,7 +556,7 @@ void RWGame::render(float alpha, float time)
 	renderer->getRenderer()->pushDebugGroup("World");
 
 	RW_PROFILE_BEGIN("world");
-	renderer->renderWorld(world, viewCam, alpha);
+	renderer->renderWorld(world, viewCam, time);
 	RW_PROFILE_END();
 
 
@@ -559,7 +565,7 @@ void RWGame::render(float alpha, float time)
 	RW_PROFILE_BEGIN("debug");
 	if( showDebugPaths )
 	{
-		renderDebugPaths(time);
+		renderDebugPaths();
 	}
 
 	if ( showDebugStats )
@@ -580,10 +586,10 @@ void RWGame::render(float alpha, float time)
 	drawOnScreenText(world, renderer);
 }
 
-void RWGame::renderDebugStats(float time, Renderer::ProfileInfo& worldRenderTime)
+void RWGame::renderDebugStats(const TimestepInfo& ts, Renderer::ProfileInfo& worldRenderTime)
 {
 	// Turn time into milliseconds
-	float time_ms = time * 1000.f;
+	float time_ms = ts.getClientTimestep() * 1000.f;
 	constexpr size_t average_every_frame = 15;
 	static float times[average_every_frame];
 	static size_t times_index = 0;
@@ -593,25 +599,30 @@ void RWGame::renderDebugStats(float time, Renderer::ProfileInfo& worldRenderTime
 		times_index = 0;
 		time_average = 0;
 
-		for (int i = 0; i < average_every_frame; ++i) {
+		for (unsigned i = 0; i < average_every_frame; ++i) {
 			time_average += times[i];
 		}
 		time_average /= average_every_frame;
 	}
 
+#if RW_PROFILER
 	std::map<std::string, Renderer::ProfileInfo*> profGroups {
 		{"Objects", &renderer->profObjects},
 		{"Effects", &renderer->profEffects},
 		{"Sky", &renderer->profSky},
 		{"Water", &renderer->profWater},
 	};
+#endif
 
 	std::stringstream ss;
-	ss << "Frametime: " << time_ms << " (FPS " << (1.f/time) << ")\n";
-	ss << "Average (per " << average_every_frame << " frames); Frametime: " << time_average << " (FPS " << (1000.f/time_average) << ")\n";
+	ss
+	   << "Frametime: " << time_ms << "ms  / " << (1.f/ts.getClientTimestep()) << "fps\n"
+	   << "Average (" << average_every_frame << " frames): " << time_average << "ms / " << (1000.f/time_average) << "fps\n"
+	   << "Timestep: " << (ts.getServerTimestep()*1000.f) << "ms\n";
 	ss << "Draws: " << lastDraws << " (" << renderer->culled << " Culls)\n";
 	ss << " Texture binds: " << renderer->getRenderer()->getTextureCount() << "\n";
 	ss << " Buffer binds: " << renderer->getRenderer()->getBufferCount() << "\n";
+#if RW_PROFILER
 	ss << " World time: " << (worldRenderTime.duration/1000000) << "ms\n";
 	for(auto& perf : profGroups)
 	{
@@ -619,6 +630,7 @@ void RWGame::renderDebugStats(float time, Renderer::ProfileInfo& worldRenderTime
 		<< perf.second->draws << " draws " << perf.second->primitives << " prims "
 		<< (perf.second->duration/1000000) << "ms\n";
 	}
+#endif
 	
 	// Count the number of interesting objects.
 	int peds = 0, cars = 0;
@@ -652,7 +664,7 @@ void RWGame::renderDebugStats(float time, Renderer::ProfileInfo& worldRenderTime
 	ti.text = ss.str();
 	ti.font = 2;
 	ti.screenPosition = glm::vec2( 10.f, 10.f );
-	ti.size = 15.f;
+	ti.size = 12.f;
 	ti.baseColour = glm::u8vec3(255);
 	renderer->text.renderText(ti);
 
@@ -685,7 +697,7 @@ void RWGame::renderDebugStats(float time, Renderer::ProfileInfo& worldRenderTime
 	}*/
 }
 
-void RWGame::renderDebugPaths(float time)
+void RWGame::renderDebugPaths()
 {
 	btVector3 roadColour(1.f, 0.f, 0.f);
 	btVector3 pedColour(0.f, 0.f, 1.f);

@@ -57,7 +57,7 @@ void MenuState::exit()
 
 }
 
-void MenuState::tick(float dt)
+void MenuState::tick(const TimestepInfo& dt)
 {
 
 }

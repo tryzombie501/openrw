@@ -23,13 +23,13 @@ class BenchmarkState : public State
 public:
 	BenchmarkState(RWGame* game, const std::string& benchfile);
 
-	virtual void enter();
-	virtual void exit();
+	void enter() override;
+	void exit() override;
 
-	virtual void tick(float dt);
-	virtual void draw(GameRenderer* r);
+	void tick(const TimestepInfo& dt) override;
+	void draw(GameRenderer* r, const TimestepInfo& ts) override;
 
-	virtual void handleEvent(const SDL_Event& event);
+	void handleEvent(const SDL_Event& event) override;
 
 	const ViewCamera& getCamera();
 };

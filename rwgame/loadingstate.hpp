@@ -10,18 +10,18 @@ class LoadingState : public State
 public:
 	LoadingState(RWGame* game);
 
-	virtual void enter();
-	virtual void exit();
+	void enter() override;
+	void exit() override;
 
-	virtual void tick(float dt);
+	void tick(const TimestepInfo& dt) override;
 
-	virtual void draw(GameRenderer* r);
+	void draw(GameRenderer* r, const TimestepInfo& ts) override;
 
 	void setNextState(State* nextState);
 	
-    virtual bool shouldWorldUpdate();
+	bool shouldWorldUpdate() override;
 
-	virtual void handleEvent(const SDL_Event& event);
+	void handleEvent(const SDL_Event& event) override;
 };
 
 #endif // LOADINGSTATE_HPP
